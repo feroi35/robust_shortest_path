@@ -1,10 +1,26 @@
+GLOBAL_CSV="results/static_results.csv"
+repo_instances="data/processed"
+
+# Supprimer le fichier CSV global s'il existe déjà
+rm -f $GLOBAL_CSV
+
+# En-tête du fichier CSV global
+echo "instance,objective,time" > $GLOBAL_CSV
+
 make release
 
-# repo_instances="../data/processed"
-# for file in "$repo_instances"/*.gr
-# do
-#     echo "Running file: $file"
-#     ./myprogram $file
-# done
+count=0
+for file in "$repo_instances"/*.gr
+do
+    echo "Running file: $file"
+    ./myprogram "$file" >> "$GLOBAL_CSV"
+    # if [ "$count" -lt 2 ]; then
+    #     echo "Running file: $file"
+    #     ./myprogram "$file" >> "$GLOBAL_CSV"
+    #     ((count++))
+    # else
+    #     break
+    # fi
+done
 
-./myprogram data/processed/20_USA-road-d.BAY.gr
+make clean

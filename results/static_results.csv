@@ -1,0 +1,124 @@
+instance,objective,time
+data/processed/1000_USA-road-d.BAY.gr, 40117, 2.77219
+data/processed/1000_USA-road-d.COL.gr, 24068, 4.59103
+data/processed/1000_USA-road-d.NY.gr, 36248, 1.55368
+data/processed/100_USA-road-d.BAY.gr, 8818, 0.093802
+data/processed/100_USA-road-d.COL.gr, 18930, 0.055612
+data/processed/100_USA-road-d.NY.gr, 15274, 0.037043
+data/processed/1100_USA-road-d.BAY.gr, 54157, 4.78746
+data/processed/1100_USA-road-d.COL.gr, 34075, 7.2694
+data/processed/1100_USA-road-d.NY.gr, 49351, 9.05859
+data/processed/1200_USA-road-d.BAY.gr, 62095, 8.44992
+data/processed/1200_USA-road-d.COL.gr,
+data/processed/1200_USA-road-d.NY.gr, 59590, 8.40927
+data/processed/120_USA-road-d.BAY.gr, 10034, 0.061943
+data/processed/120_USA-road-d.COL.gr, 18930, 0.081336
+data/processed/120_USA-road-d.NY.gr, 18916, 0.094994
+data/processed/1300_USA-road-d.BAY.gr, 60392, 10.0255
+data/processed/1300_USA-road-d.COL.gr, 32664, 10.0156
+data/processed/1300_USA-road-d.NY.gr, 55547, 5.93457
+data/processed/1400_USA-road-d.BAY.gr, 67876, 10.0269
+data/processed/1400_USA-road-d.COL.gr, 34075, 10.022
+data/processed/1400_USA-road-d.NY.gr, 55490, 10.0229
+data/processed/140_USA-road-d.BAY.gr, 12169, 0.257737
+data/processed/140_USA-road-d.COL.gr, 18301, 0.269455
+data/processed/140_USA-road-d.NY.gr, 25498, 0.136263
+data/processed/1500_USA-road-d.BAY.gr,
+data/processed/1500_USA-road-d.COL.gr, 32664, 10.0264
+data/processed/1500_USA-road-d.NY.gr,
+data/processed/1600_USA-road-d.BAY.gr, 86247, 10.0227
+data/processed/1600_USA-road-d.COL.gr,
+data/processed/1600_USA-road-d.NY.gr, 53912, 10.0685
+data/processed/160_USA-road-d.BAY.gr, 10983, 0.123303
+data/processed/160_USA-road-d.COL.gr, 18301, 0.088287
+data/processed/160_USA-road-d.NY.gr, 19964, 0.124508
+data/processed/1700_USA-road-d.BAY.gr,
+data/processed/1700_USA-road-d.COL.gr,
+data/processed/1700_USA-road-d.NY.gr, 53912, 10.0722
+data/processed/1800_USA-road-d.BAY.gr, 60038, 9.42163
+data/processed/1800_USA-road-d.COL.gr,
+data/processed/1800_USA-road-d.NY.gr,
+data/processed/180_USA-road-d.BAY.gr, 10983, 0.394034
+data/processed/180_USA-road-d.COL.gr, 22841, 0.937927
+data/processed/180_USA-road-d.NY.gr, 19964, 0.313809
+data/processed/1900_USA-road-d.BAY.gr, 69477, 10.0291
+data/processed/1900_USA-road-d.COL.gr,
+data/processed/1900_USA-road-d.NY.gr, 57216, 10.0176
+data/processed/2000_USA-road-d.BAY.gr, 61047, 10.017
+data/processed/2000_USA-road-d.COL.gr,
+data/processed/2000_USA-road-d.NY.gr, 67743, 10.0174
+data/processed/200_USA-road-d.BAY.gr, 10983, 0.120237
+data/processed/200_USA-road-d.COL.gr, 23886, 0.119848
+data/processed/200_USA-road-d.NY.gr, 24628, 0.098634
+data/processed/20_USA-road-d.BAY.gr, 9365, 0.007971
+data/processed/20_USA-road-d.COL.gr, 5357, 0.00746
+data/processed/20_USA-road-d.NY.gr, 6848, 0.007667
+data/processed/2100_USA-road-d.BAY.gr, 61467, 10.017
+data/processed/2100_USA-road-d.COL.gr,
+data/processed/2100_USA-road-d.NY.gr, 62119, 10.0182
+data/processed/2200_USA-road-d.BAY.gr, 72602, 10.0168
+data/processed/2200_USA-road-d.COL.gr,
+data/processed/2200_USA-road-d.NY.gr,
+data/processed/2300_USA-road-d.BAY.gr,
+data/processed/2300_USA-road-d.COL.gr,
+data/processed/2300_USA-road-d.NY.gr, 53650, 10.023
+data/processed/2400_USA-road-d.BAY.gr,
+data/processed/2400_USA-road-d.COL.gr,
+data/processed/2400_USA-road-d.NY.gr, 62509, 10.0326
+data/processed/2500_USA-road-d.BAY.gr, 63175, 11.6747
+data/processed/2500_USA-road-d.COL.gr,
+data/processed/2500_USA-road-d.NY.gr, 61702, 10.0306
+data/processed/250_USA-road-d.BAY.gr, 14247, 0.207266
+data/processed/250_USA-road-d.COL.gr, 24880, 0.490008
+data/processed/250_USA-road-d.NY.gr, 29136, 0.173436
+data/processed/300_USA-road-d.BAY.gr, 16557, 0.223314
+data/processed/300_USA-road-d.COL.gr, 26691, 1.03147
+data/processed/300_USA-road-d.NY.gr, 28304, 0.161289
+data/processed/350_USA-road-d.BAY.gr, 16557, 0.316771
+data/processed/350_USA-road-d.COL.gr, 23875, 0.359114
+data/processed/350_USA-road-d.NY.gr, 34082, 0.826347
+data/processed/400_USA-road-d.BAY.gr, 26141, 0.371921
+data/processed/400_USA-road-d.COL.gr, 30743, 0.677562
+data/processed/400_USA-road-d.NY.gr, 32461, 0.341309
+data/processed/40_USA-road-d.BAY.gr, 7856, 0.026051
+data/processed/40_USA-road-d.COL.gr, 10084, 0.013124
+data/processed/40_USA-road-d.NY.gr, 12410, 0.014222
+data/processed/450_USA-road-d.BAY.gr, 26141, 0.564015
+data/processed/450_USA-road-d.COL.gr, 30743, 1.86753
+data/processed/450_USA-road-d.NY.gr, 39446, 0.260565
+data/processed/500_USA-road-d.BAY.gr, 28156, 0.447968
+data/processed/500_USA-road-d.COL.gr, 30743, 2.64246
+data/processed/500_USA-road-d.NY.gr, 39721, 0.307378
+data/processed/550_USA-road-d.BAY.gr, 17628, 0.585952
+data/processed/550_USA-road-d.COL.gr, 30743, 1.84931
+data/processed/550_USA-road-d.NY.gr, 39721, 0.318988
+data/processed/600_USA-road-d.BAY.gr, 28617, 0.878227
+data/processed/600_USA-road-d.COL.gr, 30743, 3.46834
+data/processed/600_USA-road-d.NY.gr, 39721, 0.401403
+data/processed/60_USA-road-d.BAY.gr, 6965, 0.028684
+data/processed/60_USA-road-d.COL.gr, 16904, 0.02629
+data/processed/60_USA-road-d.NY.gr, 12244, 0.026522
+data/processed/650_USA-road-d.BAY.gr, 28617, 1.05339
+data/processed/650_USA-road-d.COL.gr, 30743, 3.20836
+data/processed/650_USA-road-d.NY.gr, 36248, 0.56453
+data/processed/700_USA-road-d.BAY.gr, 38281, 0.976142
+data/processed/700_USA-road-d.COL.gr, 30743, 5.31499
+data/processed/700_USA-road-d.NY.gr, 36248, 0.629108
+data/processed/750_USA-road-d.BAY.gr, 38281, 1.35065
+data/processed/750_USA-road-d.COL.gr, 30743, 8.78104
+data/processed/750_USA-road-d.NY.gr, 35956, 0.891011
+data/processed/800_USA-road-d.BAY.gr, 33047, 1.68689
+data/processed/800_USA-road-d.COL.gr, 30743, 8.8051
+data/processed/800_USA-road-d.NY.gr, 35956, 1.02321
+data/processed/80_USA-road-d.BAY.gr, 8818, 0.055419
+data/processed/80_USA-road-d.COL.gr, 10892, 0.035692
+data/processed/80_USA-road-d.NY.gr, 12244, 0.054121
+data/processed/850_USA-road-d.BAY.gr, 35151, 2.21514
+data/processed/850_USA-road-d.COL.gr, 24068, 2.98643
+data/processed/850_USA-road-d.NY.gr, 36248, 1.22578
+data/processed/900_USA-road-d.BAY.gr, 45383, 5.07456
+data/processed/900_USA-road-d.COL.gr, 24068, 3.34856
+data/processed/900_USA-road-d.NY.gr, 36248, 1.49037
+data/processed/950_USA-road-d.BAY.gr, 45383, 2.5585
+data/processed/950_USA-road-d.COL.gr, 24068, 9.16908
+data/processed/950_USA-road-d.NY.gr, 36248, 2.10976

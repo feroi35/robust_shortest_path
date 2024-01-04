@@ -1,0 +1,15 @@
+Certaines instances crashent lors de la résolution statique: 
+
+Quelques examples:
+
+Running file: data/processed/1200_USA-road-d.COL.gr
+Concert exception caught: CPLEX Error  1217: No solution exists.
+
+Running file: data/processed/1500_USA-road-d.BAY.gr
+Concert exception caught: CPLEX Error  1217: No solution exists.
+
+Running file: data/processed/1500_USA-road-d.NY.gr
+Concert exception caught: CPLEX Error  1217: No solution exists.
+
+
+Ne pas faire tourner les 123 instances à chaque fois, en garder max une dizaine de différentes tailles.
