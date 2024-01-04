@@ -1,0 +1,30 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Debug myprogram",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/myprogram_debug",
+        "args": ["data/processed/20_USA-road-d.BAY.gr"],
+        "stopAtEntry": false,
+        "cwd": "${workspaceFolder}",
+        "environment": [
+          {
+            "name": "LD_LIBRARY_PATH",
+            "value": "/opt/ibm/ILOG/CPLEX_Studio2211/cplex/lib/x86-64_linux/static_pic:/opt/ibm/ILOG/CPLEX_Studio2211/concert/lib/x86-64_linux/static_pic"
+          }
+        ],
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+          {
+            "description": "Enable pretty-printing for gdb",
+            "text": "-enable-pretty-printing",
+            "ignoreFailures": true
+          }
+        ],
+        "preLaunchTask": "make debug"
+      }
+    ]
+  }
