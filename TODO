@@ -1,3 +1,15 @@
+# TODO et Carnet de bord
+
+2 parties: 1 partie TODO actuelle
+et en dessous, un journal on liste les problèmes qu'on rencontre et on note ce qu'on a fait pour les résoudre
+
+## TODO
+
+- Ne pas faire tourner les 123 instances à chaque fois, en garder max une dizaine de différentes tailles.
+
+
+## 04.01
+
 Certaines instances crashent lors de la résolution statique: 
 
 Quelques examples:
@@ -11,5 +23,8 @@ Concert exception caught: CPLEX Error  1217: No solution exists.
 Running file: data/processed/1500_USA-road-d.NY.gr
 Concert exception caught: CPLEX Error  1217: No solution exists.
 
+## 06.01
 
-Ne pas faire tourner les 123 instances à chaque fois, en garder max une dizaine de différentes tailles.
+Pas de crash. Pas de solution existe car CPLEX n'avait pas eu le temps d'en trouver une.
+Si on laisse tourner + de 10s, ça va.
+Fixer une limite max de temps, 1 minute ?

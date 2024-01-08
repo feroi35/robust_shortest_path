@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
     char* filename = argv[1];
-    unsigned int time_limit = 10;
+    unsigned int time_limit = 60;
 
     IloEnv env;
     Instance instance(env, filename);

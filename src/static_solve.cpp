@@ -79,7 +79,7 @@ void static_solve(IloEnv env, Instance inst, unsigned int time_limit) {
 
     IloCplex cplex(model);
     cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
-    cplex.setOut(env.getNullStream());
+    // cplex.setOut(env.getNullStream());
 
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     cplex.solve();
@@ -89,24 +89,27 @@ void static_solve(IloEnv env, Instance inst, unsigned int time_limit) {
     if (cplex.getStatus() == IloAlgorithm::Infeasible)
       cout << "No Solution" << endl;
     else{
-      // std::cout << "objective: " << cplex.getObjValue() << std::endl;
-      // std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
-      // std::cout << "path: ";
-      // unsigned int current_node = inst.s-1;
-      // while (current_node != inst.t-1) {
-      //   std::cout << current_node+1 << " ";
-      //   for (unsigned int j=0; j<inst.n; j++) {
-      //     if ((inst.d[current_node][j] == inst.d[current_node][j])
-      //         && (cplex.getValue(x[current_node][j]) == 1)) {
-      //       current_node = j;
-      //       break;
-      //     }
-      //   }
-      // }
-      // std::cout << inst.t << std::endl;
 
-      std::cout << inst.name << ", " << cplex.getObjValue() << ", " 
-        << static_cast<double>(duration.count()) / 1e6 << std::endl;
+      std::cout << "objective: " << cplex.getObjValue() << std::endl;
+      std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
+      std::cout << "path: ";
+      unsigned int current_node = inst.s-1;
+      while (current_node != inst.t-1) {
+        std::cout << current_node+1 << " ";
+        for (unsigned int j=0; j<inst.n; j++) {
+          if ((inst.d[current_node][j] == inst.d[current_node][j])
+              && (cplex.getValue(x[current_node][j]) == 1)) {
+            current_node = j;
+            break;
+          }
+        }
+      }
+      std::cout << inst.t << std::endl;
+
+      // A homogénéiser, selon si on crée un csv ou pas
+      // en faire un paramètre?
+      // std::cout << inst.name << ", " << cplex.getObjValue() << ", " 
+      //   << static_cast<double>(duration.count()) / 1e6 << std::endl;
     }
   }
   catch (IloException& e) {
