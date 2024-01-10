@@ -47,14 +47,14 @@ struct Instance {
     void display() const;
 
     double compute_static_score() const { return compute_static_score(sol); }
-    double compute_robust_score() const { return compute_robust_score(sol); }
+    double compute_robust_score(IloEnv env, unsigned int time_limit) const { return compute_robust_score(env, sol, time_limit); }
     double compute_static_constraint() const { return compute_static_constraint(sol); }
-    double compute_robust_constraint() const { return compute_robust_constraint(sol); }
+    double compute_robust_constraint(IloEnv env, unsigned int time_limit) const { return compute_robust_constraint(env, sol, time_limit); }
 
     double compute_static_score(std::vector<IloInt> sol) const;
-    double compute_robust_score(std::vector<IloInt> sol) const;
+    double compute_robust_score(IloEnv env, std::vector<IloInt> sol, unsigned int time_limit) const;
     double compute_static_constraint(std::vector<IloInt> sol) const;
-    double compute_robust_constraint(std::vector<IloInt> sol) const;
+    double compute_robust_constraint(IloEnv env, std::vector<IloInt> sol, unsigned int time_limit) const;
 
 
     void exportSol(char filename[]) const;
