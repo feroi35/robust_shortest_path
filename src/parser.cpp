@@ -93,3 +93,16 @@ void Instance::display() const {
         std::cout << "]" << std::endl;
     }
 }
+
+double Instance::compute_static_score(std::vector<IloInt> sol) const {
+    double static_score = 0.0;
+    IloInt current_node = sol[0];
+    assert(current_node == s); 
+    for (unsigned int i=1; i<sol.size(); i++) {
+        IloInt next_node = sol[i];
+        static_score += d[current_node][next_node];
+        current_node = next_node;
+    }
+    assert(current_node == t);
+    return static_score;
+}

@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 #include <limits>
+#include <cassert>
 
 // Magic tricks to have CPLEX behave well:
 #ifndef IL_STD
@@ -37,15 +38,26 @@ struct Instance {
     IloNumArray p;
     IloNumArray ph;
     std::vector<Arc> mat;
-
     std::vector<std::vector<double>> d;
     std::vector<std::vector<double>> D;
 
-    std::vector<IloInt> sol;
+    std::vector<IloInt> sol; // liste des villes visitées dans l'ordre
 
     Instance(IloEnv env, char filename[]);
     void display() const;
-    // void exportSol(char filename[]) const;
+
+    double compute_static_score() const { return compute_static_score(sol); }
+    double compute_robust_score() const { return compute_robust_score(sol); }
+    double compute_static_constraint() const { return compute_static_constraint(sol); }
+    double compute_robust_constraint() const { return compute_robust_constraint(sol); }
+
+    double compute_static_score(std::vector<IloInt> sol) const;
+    double compute_robust_score(std::vector<IloInt> sol) const;
+    double compute_static_constraint(std::vector<IloInt> sol) const;
+    double compute_robust_constraint(std::vector<IloInt> sol) const;
+
+
+    void exportSol(char filename[]) const;
 };
 
 

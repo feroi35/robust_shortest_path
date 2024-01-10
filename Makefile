@@ -39,13 +39,13 @@ SRCS = $(wildcard $(SRCDIR)/*.cpp)
 OBJS = $(SRCS:$(SRCDIR)/%.cpp=$(SRCDIR)/%.o)
 TARGET = myprogram
 
-# # Debug build rule for object files
-# $(SRCDIR)/%.o: $(SRCDIR)/%.cpp $(INCDIR)/%.h
-# 	$(CXX) $(CCFLAGSCPLEX) $(DEBUGFLAGS) -c $< -o $@
-
 # Release build rule for object files
 $(SRCDIR)/%.o: $(SRCDIR)/%.cpp $(INCDIR)/%.h
 	$(CXX) $(CCFLAGSCPLEX) -c $< -o $@
+
+# Debug build rule for object files
+$(SRCDIR)/%.o: $(SRCDIR)/%.cpp $(INCDIR)/%.h
+	$(CXX) $(CCFLAGSCPLEX) $(DEBUGFLAGS) -c $< -o $@
 
 # Debug build
 debug: cplexdirexists $(OBJS)

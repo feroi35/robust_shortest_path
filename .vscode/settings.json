@@ -52,7 +52,8 @@
         "streambuf": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "chrono": "cpp"
+        "chrono": "cpp",
+        "ratio": "cpp"
     },
     "cSpell.words": [
         "ILOSTLBEGIN"

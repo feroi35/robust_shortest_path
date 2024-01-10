@@ -16,7 +16,10 @@ int main(int argc, char **argv) {
     Instance instance(env, filename);
     // instance.display();
     static_solve(env, instance, time_limit);
-
     env.end();
+
+    double obj; 
+    obj = instance.compute_static_score();
+    std::cout << "obj = " << obj << std::endl;
     return 0;
 }
