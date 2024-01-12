@@ -95,7 +95,7 @@ void Instance::display() const {
     }
 }
 
-double Instance::compute_static_score(std::vector<IloInt> solution) const {
+double Instance::compute_static_score(const std::vector<IloInt>& solution) const {
     double static_score = 0.0;
     IloInt current_node = solution[0];
     assert(current_node == s); 
@@ -108,19 +108,19 @@ double Instance::compute_static_score(std::vector<IloInt> solution) const {
     return static_score;
 }
 
-double Instance::compute_robust_score(IloEnv env, std::vector<IloInt> solution, unsigned int time_limit) const {
+double Instance::compute_robust_score(IloEnv env, const std::vector<IloInt>& solution, const unsigned int& time_limit) const {
     
     IloModel model(env);
 
-    IloArray<IloBoolVarArray> delta1(env, n);
+    IloArray<IloNumVarArray> delta1(env, n);
     std::stringstream name;
 
       // Create variables delta1
     for(unsigned int i = 0; i < n; ++i) {
-        delta1[i] = IloBoolVarArray(env, n);
+        delta1[i] = IloNumVarArray(env, n);
         for(unsigned int j = 0; j < n; ++j) {
         name << "delta1_" << i << j;
-        delta1[i][j] = IloBoolVar(env, name.str().c_str());
+        delta1[i][j] = IloNumVar(env, 0.0, D[i][j], name.str().c_str());
         name.str("");
         }
     }
@@ -144,7 +144,6 @@ double Instance::compute_robust_score(IloEnv env, std::vector<IloInt> solution, 
     for (unsigned int i=0; i<n; i++) {
         for (unsigned int j=0; j<n; j++) {
             expression_cstr += delta1[i][j];
-            model.add(delta1[i][j] <= D[i][j]);
         }
     }
     model.add(expression_cstr <= d1);
@@ -161,34 +160,34 @@ double Instance::compute_robust_score(IloEnv env, std::vector<IloInt> solution, 
 
     if (cplex.getStatus() == IloAlgorithm::Infeasible){
         cout << "No Solution" << endl;
-        throw std::domain_error("No solution in robust objective");
+        throw std::domain_error("No solution in robust objectivecproblem");
         return 0;
     }
     else{
         std::cout << "robust objective: " << cplex.getObjValue() << std::endl;
         std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
-        return cplex.getObjValue();        
+        return cplex.getObjValue();;        
     }
 }
 
-double Instance::compute_robust_constraint(IloEnv env, std::vector<IloInt> solution, unsigned int time_limit) const {
+double Instance::compute_robust_constraint(IloEnv env, const std::vector<IloInt>& solution, const unsigned int& time_limit) const {
     
     IloModel model(env);
 
-    IloBoolVarArray delta2(env, n);
+    IloNumVarArray delta2(env, n);
     std::stringstream name;
 
       // Create variables delta2
     for(unsigned int i = 0; i < n; ++i) {
         name << "delta2_" << i;
-        delta2[i] = IloBoolVar(env, name.str().c_str());
+        delta2[i] = IloNumVar(env, 0.0, 2.0, name.str().c_str());
         name.str("");
     }
 
     IloExpr expression_obj(env);
     unsigned int node;
 
-    for(unsigned int k = 0; k < solution.size()-1; k++) {
+    for(unsigned int k = 0; k < solution.size(); k++) {
         node = solution[k];
         expression_obj += p[node-1] + ph[node-1]*delta2[node-1];
     }
@@ -201,7 +200,6 @@ double Instance::compute_robust_constraint(IloEnv env, std::vector<IloInt> solut
     IloExpr expression_cstr(env);
     for (unsigned int i=0; i<n; i++) {
         expression_cstr += delta2[i];
-        model.add(delta2[i] <= 2);
     }
     model.add(expression_cstr <= d2);
     expression_cstr.end();
@@ -217,7 +215,7 @@ double Instance::compute_robust_constraint(IloEnv env, std::vector<IloInt> solut
 
     if (cplex.getStatus() == IloAlgorithm::Infeasible){
         cout << "No Solution" << endl;
-        throw std::domain_error("No solution in robust objective");
+        throw std::domain_error("No solution in robust constraint problem");
         return 0;
     }
     else{

@@ -2,7 +2,7 @@
 #include <chrono>
 
 
-void static_solve(IloEnv env, Instance& inst, unsigned int time_limit) {
+void static_solve(IloEnv env, Instance& inst, const unsigned int& time_limit) {
 
   IloModel model(env);
 
