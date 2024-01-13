@@ -1,7 +1,7 @@
-#include "static_solve.h"
+#include "dualized_formulation.h"
 #include <chrono>
 
-void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit) {
+void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, const int& verbose) {
 
     IloModel model(env);
 
@@ -111,7 +111,8 @@ void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit) 
 
     IloCplex cplex(model);
     cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
-    // cplex.setOut(env.getNullStream());
+   if(verbose <2)
+        cplex.setOut(env.getNullStream());
 
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     cplex.solve();
@@ -119,37 +120,46 @@ void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit) 
     std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
     if (cplex.getStatus() == IloAlgorithm::Infeasible)
-        cout << "No Solution" << endl;
+        cout << "No dualized Solution for file " << inst.name << endl;
     else{
 
-        std::cout << "dualized objective: " << cplex.getObjValue() << std::endl;
-        std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
-        std::cout << "path: ";
+        if(verbose >= 1){
+            std::cout << "objective: " << cplex.getObjValue() << std::endl;
+            std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
+            std::cout << "path: ";
+        }
 
         assert(inst.sol.empty());
         unsigned int current_node = inst.s-1;
         while (current_node != inst.t-1) {
-        std::cout << current_node+1 << " ";
-        inst.sol.push_back(current_node+1);
-        for (unsigned int j=0; j<inst.n; j++) {
-            if ((inst.d[current_node][j] == inst.d[current_node][j])
-                && (cplex.getValue(x[current_node][j]) == 1)) {
-            current_node = j;
-            break;
+            if(verbose >=1){
+                std::cout << current_node+1 << " ";
+            }
+            inst.sol.push_back(current_node+1);
+            for (unsigned int j=0; j<inst.n; j++) {
+                if ((inst.d[current_node][j] == inst.d[current_node][j])
+                    && (cplex.getValue(x[current_node][j]) == 1)) {
+                current_node = j;
+                break;
+                }
             }
         }
-        }
-        std::cout << inst.t << std::endl;
+        if(verbose >=1)
+            std::cout << inst.t << std::endl;
         inst.sol.push_back(inst.t);
 
-        std::cout << "size sol: " << inst.sol.size() << std::endl;
-        for (unsigned int i=0; i<inst.sol.size(); i++) {
-        std::cout << inst.sol[i] << " ";
+        if(verbose >=1){
+            std::cout << "size sol: " << inst.sol.size() << std::endl;
+            for (unsigned int i=0; i<inst.sol.size(); i++) {
+                std::cout << inst.sol[i] << " ";
+            }
+            std::cout << std::endl;
         }
 
         // A homogénéiser, selon si on crée un csv ou pas
         // en faire un paramètre?
         std::cout << inst.name << ", " << cplex.getObjValue() << ", " 
-        << static_cast<double>(duration.count()) / 1e6 << std::endl;
+            << static_cast<double>(duration.count()) / 1e6 <<
+            ", " << cplex.getNnodes() << ", " << cplex.getBestObjValue() << std::endl; 
     }
 }

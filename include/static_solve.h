@@ -4,6 +4,6 @@
 
 #include "parser.h"
 
-void static_solve(IloEnv env, Instance& inst, const unsigned int& time_limit=10);
+void static_solve(IloEnv env, Instance& inst, const unsigned int& time_limit=60, const int& verbose=0);
 
 #endif

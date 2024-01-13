@@ -6,8 +6,8 @@
         "type": "cppdbg",
         "request": "launch",
         "program": "${workspaceFolder}/myprogram_debug",
-        // "args": ["data/processed/20_USA-road-d.BAY.gr"],
-        "args": ["data/test/toy.gr", "static"],
+        "args": ["data/processed/20_USA-road-d.BAY.gr", "dualized", "1"],
+        // "args": ["data/test/toy.gr", "static", "1"],
         "stopAtEntry": false,
         "cwd": "${workspaceFolder}",
         "environment": [

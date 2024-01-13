@@ -16,7 +16,7 @@ Instance::Instance(IloEnv env, char filename[]) {
     std::ifstream file(filename);
 
     if (!file) {
-        std::cerr << "Error when opening file" << std::endl;
+        std::cerr << "Error when opening file " << name <<  std::endl;
         exit(1);
     }
 
@@ -95,7 +95,7 @@ void Instance::display() const {
     }
 }
 
-double Instance::compute_static_score(const std::vector<IloInt>& solution) const {
+double Instance::compute_static_score(const std::vector<IloInt>& solution, const int& verbose) const {
     double static_score = 0.0;
     IloInt current_node = solution[0];
     assert(current_node == s); 
@@ -108,7 +108,7 @@ double Instance::compute_static_score(const std::vector<IloInt>& solution) const
     return static_score;
 }
 
-double Instance::compute_robust_score(IloEnv env, const std::vector<IloInt>& solution, const unsigned int& time_limit) const {
+double Instance::compute_robust_score(IloEnv env, const std::vector<IloInt>& solution, const unsigned int& time_limit, const int& verbose) const {
     
     IloModel model(env);
 
@@ -151,7 +151,9 @@ double Instance::compute_robust_score(IloEnv env, const std::vector<IloInt>& sol
 
     IloCplex cplex(model);
     cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
-    // cplex.setOut(env.getNullStream());
+    
+    if(verbose <2)
+        cplex.setOut(env.getNullStream());
 
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     cplex.solve();
@@ -160,17 +162,19 @@ double Instance::compute_robust_score(IloEnv env, const std::vector<IloInt>& sol
 
     if (cplex.getStatus() == IloAlgorithm::Infeasible){
         cout << "No Solution" << endl;
-        throw std::domain_error("No solution in robust objectivecproblem");
-        return 0;
+        throw std::domain_error("No solution in robust objective cproblem");
+        return 0.;
     }
     else{
-        std::cout << "robust objective: " << cplex.getObjValue() << std::endl;
-        std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
+        if (verbose >= 1){
+            std::cout << "robust objective: " << cplex.getObjValue() << std::endl;
+            std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
+        }
         return cplex.getObjValue();;        
     }
 }
 
-double Instance::compute_robust_constraint(IloEnv env, const std::vector<IloInt>& solution, const unsigned int& time_limit) const {
+double Instance::compute_robust_constraint(IloEnv env, const std::vector<IloInt>& solution, const unsigned int& time_limit,const int& verbose) const {
     
     IloModel model(env);
 
@@ -206,7 +210,9 @@ double Instance::compute_robust_constraint(IloEnv env, const std::vector<IloInt>
 
     IloCplex cplex(model);
     cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
-    // cplex.setOut(env.getNullStream());
+    
+    if(verbose <2)
+        cplex.setOut(env.getNullStream());
 
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     cplex.solve();
@@ -216,11 +222,13 @@ double Instance::compute_robust_constraint(IloEnv env, const std::vector<IloInt>
     if (cplex.getStatus() == IloAlgorithm::Infeasible){
         cout << "No Solution" << endl;
         throw std::domain_error("No solution in robust constraint problem");
-        return 0;
+        return 0.;
     }
     else{
-        std::cout << "robust constraint: " << cplex.getObjValue() << std::endl;
-        std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
+        if (verbose >= 1){
+            std::cout << "robust constraint: " << cplex.getObjValue() << std::endl;
+            std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
+        }
         return cplex.getObjValue();        
     }
 }
