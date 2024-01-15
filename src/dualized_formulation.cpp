@@ -111,10 +111,13 @@ void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, 
 
     IloCplex cplex(model);
     cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
-   if(verbose <2)
-        cplex.setOut(env.getNullStream());
+//    if(verbose <2)
+        // cplex.setOut(env.getNullStream());
 
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+
+    cplex.setParam(IloCplex::Param::Preprocessing::Presolve, 0);
+
     cplex.solve();
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
