@@ -43,23 +43,17 @@ TARGET = myprogram
 $(SRCDIR)/%.o: $(SRCDIR)/%.cpp $(INCDIR)/%.h
 	$(CXX) $(CCFLAGSCPLEX) -c $< -o $@
 
-# Debug build rule for object files
-$(SRCDIR)/%.o: $(SRCDIR)/%.cpp $(INCDIR)/%.h
-	$(CXX) $(CCFLAGSCPLEX) $(DEBUGFLAGS) -c $< -o $@
+# # Debug build rule for object files
+# $(SRCDIR)/%.o: $(SRCDIR)/%.cpp $(INCDIR)/%.h
+# 	$(CXX) $(CCFLAGSCPLEX) $(DEBUGFLAGS) -c $< -o $@
 
 # Debug build
-debug: cplexdirexists $(OBJS)
+debug: $(OBJS)
 	$(CXX) $(CCFLAGSCPLEX) $(DEBUGFLAGS) -o $(TARGET)_debug $(OBJS) $(CCLNFLAGSCPLEX)
 
 # Release build
-release: cplexdirexists $(OBJS)
+release: $(OBJS)
 	$(CXX) $(CCFLAGSCPLEX) -o $(TARGET) $(OBJS) $(CCLNFLAGSCPLEX)
-
-
-.SILENT: cplexdirexists
-cplexdirexists:
-	if [ -d "$(CPLEX)" ]; then echo "Dossier cplex $(CPLEX) trouvé\n"; else echo "\n\n Je n'ai pas trouvé le dossier d'installation cplex!!!!!"; exit 1; fi
-
 
 clean: cleanobj
 	rm -f $(OBJS) $(TARGET) $(TARGET)_debug

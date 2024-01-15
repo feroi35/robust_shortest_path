@@ -1,10 +1,8 @@
+#include <cstdlib>
 #include "main.h"
 #include "parser.h"
 #include "static_solve.h"
 #include "dualized_formulation.h"
-#include <cstdlib>
-
-// #include <string>
 
 
 int main(int argc, char **argv) {
@@ -19,7 +17,7 @@ int main(int argc, char **argv) {
     if (argc > 3) {
         verbose = atoi(argv[3]);
     }
-    unsigned int time_limit = 60;
+    unsigned int time_limit = 120;
     unsigned int time_limit_robust_obj = 60;
     unsigned int time_limit_robust_cstr = 60;
 
@@ -32,20 +30,19 @@ int main(int argc, char **argv) {
     } else if (strcmp(method, "dualized") == 0){
         dualized_solve(env, instance, time_limit, verbose);
     } else {
-        std::cout << "Method not recognized" << method << std::endl;
-        std::cout << "Method should be either 'static' or 'dualized'" << std::endl;
+        std::cerr << "Method not recognized: " << method << std::endl;
+        std::cerr << "Method should be either 'static' or 'dualized'" << std::endl;
+        exit(1);
     }
 
     if(verbose > 0){
-        double obj; 
-        obj = instance.compute_static_score(verbose);
-        std::cout << "obj static = " << obj << std::endl;
-        double robust_associated_obj;
-        robust_associated_obj = instance.compute_robust_score(env, instance.sol, time_limit_robust_obj, verbose);
-        std::cout << "obj robust = " << robust_associated_obj << std::endl;
-        double robust_associated_cstr;
-        robust_associated_cstr = instance.compute_robust_constraint(env, instance.sol, time_limit_robust_cstr, verbose);
-        std::cout << "cstr robust = " << robust_associated_cstr << " with S = " << instance.S << std::endl;
+        std::cout << std::endl;
+        double static_obj = instance.compute_static_score(verbose);
+        std::cout << "static objective = " << static_obj << std::endl;
+        double robust_obj = instance.compute_robust_score(env, instance.sol, time_limit_robust_obj, verbose-2);
+        std::cout << "robust objective = " << robust_obj << std::endl;
+        double robust_cstr = instance.compute_robust_constraint(env, instance.sol, time_limit_robust_cstr, verbose-2);
+        std::cout << "robust constraint  = " << robust_cstr << " with S = " << instance.S << std::endl;
     }
 
     env.end(); 
