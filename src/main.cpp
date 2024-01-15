@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
     char* filename = argv[1];
-    unsigned int time_limit = 60;
+    unsigned int time_limit = 120;
     char* method = argv[2];
 
     // char* verb = argv[3];
@@ -50,10 +50,14 @@ int main(int argc, char **argv) {
     if(strcmp(method, "dualized") == 0){
         IloEnv env;
         Instance instance(env, filename);
+        if(verbose >= 1){
+            std::cout << "Instance loaded: " << instance.name << std::endl;
+        }
         // instance.display();
         dualized_solve(env, instance, time_limit, verbose);
 
         if(verbose >= 1){
+            cout << "solve done" << endl;
             double obj; 
             obj = instance.compute_static_score(verbose);
             std::cout << "obj static = " << obj << std::endl;
