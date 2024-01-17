@@ -25,15 +25,21 @@ int main(int argc, char **argv) {
     Instance instance(env, filename);
     // instance.display();
 
-    if(strcmp(method, "static") == 0) {
-        static_solve(env, instance, time_limit, verbose);
-    } else if (strcmp(method, "dualized") == 0){
-        dualized_solve(env, instance, time_limit, verbose);
-    } else {
-        std::cerr << "Method not recognized: " << method << std::endl;
-        std::cerr << "Method should be either 'static' or 'dualized'" << std::endl;
-        exit(1);
-    }
+    try {
+        if(strcmp(method, "static") == 0) {
+            static_solve(env, instance, time_limit, verbose);
+        } else if (strcmp(method, "dualized") == 0){
+            dualized_solve(env, instance, time_limit, verbose);
+        } else {
+            std::cerr << "Method not recognized: " << method << std::endl;
+            std::cerr << "Method should be either 'static' or 'dualized'" << std::endl;
+            exit(1);
+        }
+    } catch (IloException& e) {
+        std::cerr << "Concert exception caught: " << e << std::endl;
+    } catch (...) {
+        std::cerr << "Unknown exception caught" << std::endl;
+    }	
 
     if(verbose > 0){
         std::cout << std::endl;

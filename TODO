@@ -28,3 +28,46 @@ Concert exception caught: CPLEX Error  1217: No solution exists.
 Pas de crash. Pas de solution existe car CPLEX n'avait pas eu le temps d'en trouver une.
 Si on laisse tourner + de 10s, ça va.
 Fixer une limite max de temps, 1 minute ?
+
+## 17.01
+
+Sur certaines grosses instances: linux kills le programme avec la méthode dualisée
+Pas de message d'erreur, simplement : 
+./run.sh: line 20:  2414 Killed                  ./myprogram "$file" "$method" "$verbose"
+
+Mais si on creuse en affichant **dmesg**, on obtient:
+Out of memory: Killed process 2576 (myprogram) total-vm:3771096kB, anon-rss:3110692kB, file-rss:4kB, shmem-rss:0kB, UID:1000 pgtables:6396kB oom_score_adj:0
+Problème: c'est lorsqu'on utilise cplex que le programme meurt. Il arrive bien à se build avant...
+
+https://www.ibm.com/support/pages/diagnosing-cplex-error-1001-out-memory
+For some reason, cplex ne ressort pas l'erreur 1001, linux le tue avant
+Contacter cplex ?
+
+ulimit -a
+max locked memory           (kbytes, -l) 65536
+max memory size             (kbytes, -m) unlimited
+
+max locked memory
+The maximum size that may be locked into memory. Memory locking ensures the memory is always in RAM and never moved to the swap disk.
+
+Quand on exporte le problème en .lp, on peut exécuter le model.lp depuis cplex lancé depuis Windows.
+Donc lié à un problème de mémoire sur le WSL
+
+Remarque: on obtient les warnings suivants:
+Warning, line 1755417: Name 'x_0_0#235978' does not exist.
+
+J'imagine que ce warning apparait pour toutes les variables qui sont "créées" mais jamais utilisées dans les contraintes ou l'objectif
+c'est à dire, les variables qui représentent des arcs qui n'existent pas.
+
+Dans mon fichier .wslconfig, 
+j'avais memory = 4Gb
+Quand j'enlève cette ligne, Cplex arrive à presolve le problème, ce qu'il ne faisait pas avant. Mais crash après trouver sa première solution
+
+Out of memory: Killed process 1443 (myprogram) total-vm:3981856kB, anon-rss:3086536kB, file-rss:4kB, shmem-rss:0kB, UID:1000 pgtables:7136kB oom_score_adj:0
+
+Essayons d'abord de modifier le problème pour que moins de mémoire soit prise. 
+Pas besoin de stocker un vecteur de vecteurs entier remplis à moitié de NaN, il faut faire ça de manière intelligente.
+
+- 1. Stocker un vecteur de vecteurs de vecteurs d'arc entrants et un vecteur de vecteurs d'arcs sortants. On stocke ainsi uniquement ce dont on a besoin.
+- 2. (à tester) Virer env de la création de l'instance. C'est absurde comme manière de faire. De +, ça peut poser des problèmes lors de la résolution de sous-problèmes lors de l'algo des plans coupants. 
+
