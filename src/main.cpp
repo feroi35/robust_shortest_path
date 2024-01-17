@@ -29,7 +29,10 @@ int main(int argc, char **argv) {
         if(strcmp(method, "static") == 0) {
             static_solve(env, instance, time_limit, verbose);
         } else if (strcmp(method, "dualized") == 0){
+            cout << "dualized 1 " << endl;
             dualized_solve(env, instance, time_limit, verbose);
+            cout << "dualized 2 " << endl;
+            dualized_solve_2(env, instance, time_limit, verbose);
         } else {
             std::cerr << "Method not recognized: " << method << std::endl;
             std::cerr << "Method should be either 'static' or 'dualized'" << std::endl;
@@ -45,9 +48,9 @@ int main(int argc, char **argv) {
         std::cout << std::endl;
         double static_obj = instance.compute_static_score(verbose);
         std::cout << "static objective = " << static_obj << std::endl;
-        double robust_obj = instance.compute_robust_score(env, instance.sol, time_limit_robust_obj, verbose-2);
+        double robust_obj = instance.compute_robust_score(env, instance.sol, time_limit_robust_obj, verbose);
         std::cout << "robust objective = " << robust_obj << std::endl;
-        double robust_cstr = instance.compute_robust_constraint(env, instance.sol, time_limit_robust_cstr, verbose-2);
+        double robust_cstr = instance.compute_robust_constraint(env, instance.sol, time_limit_robust_cstr, verbose);
         std::cout << "robust constraint  = " << robust_cstr << " with S = " << instance.S << std::endl;
     }
 

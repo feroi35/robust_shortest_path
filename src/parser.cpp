@@ -43,6 +43,8 @@ Instance::Instance(IloEnv env, char filename[]) {
     std::vector<std::vector<double>> d_(n, std::vector<double>(n, undefinedValue));
     std::vector<std::vector<double>> D_(n, std::vector<double>(n, undefinedValue));
     // débattable, c'est pour avoir une première version qui tourne
+    d_vec = IloNumArray(env);
+    D_vec = IloNumArray(env);
 
     while (readChar != ']') {
         Arc v;
@@ -54,10 +56,13 @@ Instance::Instance(IloEnv env, char filename[]) {
         mat.push_back(v);
         d_[v.i-1][v.j-1] = v.d;
         D_[v.i-1][v.j-1] = v.D;
+        d_vec.add(v.d);
+        D_vec.add(v.D);
     }
     file.close();
     d = d_;
     D = D_;
+    n_arc = mat.size();
 }
 
 
@@ -112,17 +117,23 @@ double Instance::compute_robust_score(IloEnv env, const std::vector<IloInt>& sol
     
     IloModel model(env);
 
-    IloArray<IloNumVarArray> delta1(env, n);
+    // IloArray<IloNumVarArray> delta1(env, n);
+    IloNumVarArray delta1(env, n_arc);
     std::stringstream name;
 
       // Create variables delta1
-    for(unsigned int i = 0; i < n; ++i) {
-        delta1[i] = IloNumVarArray(env, n);
-        for(unsigned int j = 0; j < n; ++j) {
-        name << "delta1_" << i << j;
-        delta1[i][j] = IloNumVar(env, 0.0, D[i][j], name.str().c_str());
+    // for(unsigned int i = 0; i < n; ++i) {
+    //     delta1[i] = IloNumVarArray(env, n);
+    //     for(unsigned int j = 0; j < n; ++j) {
+    //     name << "delta1_" << i << j;
+    //     delta1[i][j] = IloNumVar(env, 0.0, D[i][j], name.str().c_str());
+    //     name.str("");
+    //     }
+    // }
+    for(unsigned int a = 0; a < n_arc; ++a) {
+        name << "delta1_" << a;
+        delta1[a] = IloNumVar(env, 0.0, D_vec[a], name.str().c_str());
         name.str("");
-        }
     }
 
     IloExpr expression_obj(env);
@@ -132,8 +143,13 @@ double Instance::compute_robust_score(IloEnv env, const std::vector<IloInt>& sol
     for(unsigned int k = 0; k < solution.size()-1; k++) {
         start_node = solution[k];
         end_node = solution[k+1];
-        expression_obj += d[start_node-1][end_node-1]*(1+delta1[start_node-1][end_node-1]);
+        for(unsigned int a = 0; a < n_arc; ++a) {
+            if (mat[a].i == start_node && mat[a].j == end_node)
+                expression_obj += mat[a].d*(1+delta1[a]);
+        }
+        // expression_obj += d[start_node-1][end_node-1]*(1+delta1[start_node-1][end_node-1]);
     }
+
 
     IloObjective obj(env, expression_obj, IloObjective::Maximize);
     model.add(obj);
@@ -141,10 +157,13 @@ double Instance::compute_robust_score(IloEnv env, const std::vector<IloInt>& sol
 
     // Constraints
     IloExpr expression_cstr(env);
-    for (unsigned int i=0; i<n; i++) {
-        for (unsigned int j=0; j<n; j++) {
-            expression_cstr += delta1[i][j];
-        }
+    // for (unsigned int i=0; i<n; i++) {
+    //     for (unsigned int j=0; j<n; j++) {
+    //         expression_cstr += delta1[i][j];
+    //     }
+    // }
+    for (unsigned int a=0; a<n_arc; a++) {
+        expression_cstr += delta1[a];
     }
     model.add(expression_cstr <= d1);
     expression_cstr.end();

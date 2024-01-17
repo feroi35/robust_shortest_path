@@ -30,6 +30,7 @@ const double undefinedValue = std::numeric_limits<double>::quiet_NaN();
 struct Instance {
     char* name;
     IloInt n;
+    IloInt n_arc;
     IloInt s;
     IloInt t;
     IloNum S;
@@ -40,6 +41,8 @@ struct Instance {
     std::vector<Arc> mat;
     std::vector<std::vector<double>> d;
     std::vector<std::vector<double>> D;
+    IloNumArray d_vec;
+    IloNumArray D_vec;
 
     std::vector<IloInt> sol; // liste des villes visitées dans l'ordre
 

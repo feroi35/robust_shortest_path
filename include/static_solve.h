@@ -6,4 +6,6 @@
 
 void static_solve(IloEnv env, Instance& inst, const unsigned int& time_limit=60, const int& verbose=0);
 
+void static_solve_2(IloEnv env, Instance& inst, const unsigned int& time_limit=60, const int& verbose=0);
+
 #endif
