@@ -5,6 +5,6 @@
 class Instance; // forward declaration
 class IloEnv;
 
-void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit=10, const int& verbose=0);
+void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit=300, const int& verbose=0);
 
 #endif

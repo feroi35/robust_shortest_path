@@ -1,9 +1,9 @@
-#include "parser.h"
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <cassert>
 #include <chrono>
+#include "parser.h"
 
 
 Instance::Instance(IloEnv env, char filename[]) {
@@ -116,25 +116,34 @@ double Instance::compute_static_constraint(const std::vector<IloInt>& solution) 
 
 double Instance::compute_robust_score(IloEnv env, const std::vector<IloInt>& solution,
         const unsigned int& time_limit, const int& verbose) const {
-
+    unsigned int n_var = solution.size()-1; // one variable for each arc
     IloModel model(env);
 
     // Variables
-    IloNumVarArray delta1(env, n_arc); // Besoin uniquement de solution.size() variables
-    for (unsigned int a = 0; a<n_arc; ++a) {
-        delta1[a] = IloNumVar(env, 0.0, D_vec[a]);
+    IloNumVarArray delta1(env, n_var);
+    unsigned int start_node;
+    unsigned int end_node;
+    for (unsigned int k=0; k < n_var; k++) {
+        start_node = solution[k];
+        end_node = solution[k+1];
+        for (unsigned int a = 0; a < n_arc; a++) {
+            if (mat[a].i == start_node && mat[a].j == end_node) {
+                delta1[k] = IloNumVar(env, 0.0, D_vec[a]);
+                break;
+            }
+        }
     }
 
     // Objective
     IloExpr expression_obj(env);
-    unsigned int start_node;
-    unsigned int end_node;
-    for (unsigned int k = 0; k < solution.size()-1; k++) {
+    for (unsigned int k=0; k < n_var; k++) {
         start_node = solution[k];
         end_node = solution[k+1];
-        for (unsigned int a = 0; a < n_arc; ++a) {
-            if (mat[a].i == start_node && mat[a].j == end_node)
-                expression_obj += mat[a].d*(1+delta1[a]);
+        for (unsigned int a = 0; a < n_arc; a++) {
+            if (mat[a].i == start_node && mat[a].j == end_node) {
+                expression_obj += mat[a].d * (1 + delta1[k]);
+                break;
+            }
         }
     }
     IloObjective obj(env, expression_obj, IloObjective::Maximize);
@@ -146,8 +155,7 @@ double Instance::compute_robust_score(IloEnv env, const std::vector<IloInt>& sol
 
     IloCplex cplex(model);
     cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
-    if (verbose < 2)
-        cplex.setOut(env.getNullStream());
+    if (verbose < 2) cplex.setOut(env.getNullStream());
 
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     cplex.solve();
@@ -155,31 +163,31 @@ double Instance::compute_robust_score(IloEnv env, const std::vector<IloInt>& sol
     std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
     if (cplex.getStatus() == IloAlgorithm::Infeasible) {
-        std::cout << "No Solution" << std::endl;
+        std::cerr << "No Solution" << std::endl;
         throw std::domain_error("No solution in robust objective problem");
-    } else {
-        if (verbose >= 1) {
-            std::cout << "robust objective: " << cplex.getObjValue() << std::endl;
-            std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
-        }
-        return cplex.getObjValue();;
     }
+    if (verbose >= 1) {
+        std::cout << "robust objective: " << cplex.getObjValue() << std::endl;
+        std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
+    }
+    return cplex.getObjValue();
 }
 
 
 double Instance::compute_robust_constraint(IloEnv env, const std::vector<IloInt>& solution,
         const unsigned int& time_limit,const int& verbose) const {
-
+    unsigned int n_sol = solution.size();
     IloModel model(env);
 
-    IloNumVarArray delta2(env, n, 0.0, 2.0); // Besoin uniquement de solution.size() variables
+    // Variables
+    IloNumVarArray delta2(env, n_sol, 0.0, 2.0);
 
     // Objective
     IloExpr expression_obj(env);
     unsigned int node;
-    for(unsigned int k = 0; k < solution.size(); k++) {
+    for (unsigned int k = 0; k < n_sol; k++) {
         node = solution[k];
-        expression_obj += p[node-1] + ph[node-1]*delta2[node-1];
+        expression_obj += p[node-1] + ph[node-1]*delta2[k];
     }
     IloObjective obj(env, expression_obj, IloObjective::Maximize);
     model.add(obj);
@@ -190,7 +198,7 @@ double Instance::compute_robust_constraint(IloEnv env, const std::vector<IloInt>
 
     IloCplex cplex(model);
     cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
-    if (verbose <2) cplex.setOut(env.getNullStream());
+    if (verbose < 2) cplex.setOut(env.getNullStream());
 
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     cplex.solve();
@@ -198,15 +206,12 @@ double Instance::compute_robust_constraint(IloEnv env, const std::vector<IloInt>
     std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
     if (cplex.getStatus() == IloAlgorithm::Infeasible){
-        std::cout << "No Solution" << std::endl;
+        std::cerr << "No Solution for robust constraint with instance " << name << std::endl;
         throw std::domain_error("No solution in robust constraint problem");
-        return 0.;
     }
-    else{
-        if (verbose >= 1){
-            std::cout << "robust constraint: " << cplex.getObjValue() << std::endl;
-            std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
-        }
-        return cplex.getObjValue();
+    if (verbose >= 1) {
+        std::cout << "robust constraint: " << cplex.getObjValue() << std::endl;
+        std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
     }
+    return cplex.getObjValue();
 }

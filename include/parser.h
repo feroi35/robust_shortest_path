@@ -2,10 +2,9 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include <ilcplex/ilocplex.h> // better to do a forward declaration?
+ILOSTLBEGIN // macro to avoid incompatibility. Important to be before the other includes
 #include <vector>
-#include <ilcplex/ilocplex.h>
-
-ILOSTLBEGIN
 
 struct Arc {
     IloInt i;
@@ -45,8 +44,6 @@ struct Instance {
     double compute_robust_score(IloEnv env, const std::vector<IloInt>& sol, const unsigned int& time_limit =60, const int& verbose=0) const;
     double compute_static_constraint(const std::vector<IloInt>& sol) const;
     double compute_robust_constraint(IloEnv env, const std::vector<IloInt>& sol, const unsigned int& time_limit=60, const int& verbose=0) const;
-
-    void exportSol(char filename[]) const;
 };
 
 

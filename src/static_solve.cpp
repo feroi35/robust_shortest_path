@@ -6,7 +6,6 @@
 
 
 void static_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, const int& verbose) {
-
     IloModel model(env);
 
     // Variables
@@ -55,9 +54,7 @@ void static_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, co
 
     IloCplex cplex(model);
     cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
-
     if (verbose < 2) cplex.setOut(env.getNullStream());
-    if (verbose > 0) std::cout << "Model built! Solving..." << std::endl;
 
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     cplex.solve();
