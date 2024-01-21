@@ -1,11 +1,12 @@
 # TODO et Carnet de bord
 
-2 parties: 1 partie TODO actuelle
-et en dessous, un journal on liste les problèmes qu'on rencontre et on note ce qu'on a fait pour les résoudre
 
 ## TODO
 
-- Ne pas faire tourner les 123 instances à chaque fois, en garder max une dizaine de différentes tailles.
+- Résolution des sous-problèmes, c'est tellement overkill de résoudre le MILP
+Si l'on trie au début les D et les poids des villes, il suffit de donner le plus gros coefficient aux premières villes/ aux premiers arcs. 
+On va l'appeler en callback, donc c'est important que ce soit rapide. Appeler CPLEX, rien que l'interface, j'imagine que ça prend du temps alors que le problème est hyper simple à résoudre sans l'appeler. 
+- Faire les outils graphiques. Nombre d'instances résolus par rapport au temps de résolution
 
 
 ## 04.01
@@ -71,3 +72,43 @@ Pas besoin de stocker un vecteur de vecteurs entier remplis à moitié de NaN, i
 - 1. Stocker un vecteur de vecteurs de vecteurs d'arc entrants et un vecteur de vecteurs d'arcs sortants. On stocke ainsi uniquement ce dont on a besoin.
 - 2. (à tester) Virer env de la création de l'instance. C'est absurde comme manière de faire. De +, ça peut poser des problèmes lors de la résolution de sous-problèmes lors de l'algo des plans coupants. 
 
+## 19.01
+
+Résolution des sous-problèmes, c'est tellement overkill de résoudre le MILP
+Si l'on trie au début les D et les poids des villes, il suffit de donner le plus gros coefficient aux premières villes/ aux premiers arcs. 
+
+ data/processed/100_USA-road-d.COL.gr
+ La contrainte robuste est plus faible que la contrainte statique (poids des villes additionné), pas possible. 
+ A débugger. 
+Faire attention aux décalages de 1. Indexation des instances commence à 1. Problème réglé.
+
+
+En faisant tourner le modèle statique sur toutes les instances:
+
+Running file: data/processed/2100_USA-road-d.COL.gr, 56 / 123
+Advanced basis not built.
+Advanced basis not built.
+
+Running file: data/processed/2300_USA-road-d.COL.gr, 62 / 123
+Advanced basis not built.
+Concert exception caught: CPLEX Error  1217: No solution exists.
+-> Simplement pas assez de temps donné, elle est énervée cette instance. Mais gestion des erreurs revues pour ne pas avoir d'incohérences comme cella là. 
+
+## 21.01
+
+Dans la version dualized avec les arcs, 
+lambda était un BoolVarArray au lieu d'être un NumVarArray
+-> corrigé
+
+Problème de dualized.
+Detecting symmetries...
+Elapsed time for symmetry detection = 82.89 sec. (10000.42 ticks)
+Found 2.310657e+347 symmetric permutations.
+
+Comment est-ce qu'il peut détecter autant de symmétries ?
+A creuser pour améliorer la résolution
+
+Running file: data/processed/1000_USA-road-d.COL.gr, 2/123
+Advanced basis not built.
+
+Que signifie "Advanced basis not built" ?

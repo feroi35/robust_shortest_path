@@ -1,355 +1,120 @@
 #include "dualized_formulation.h"
+#include "parser.h"
 #include <chrono>
+
 
 void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, const int& verbose) {
 
     IloModel model(env);
 
-    IloArray<IloBoolVarArray> x(env, inst.n);
-    IloArray<IloNumVarArray> lambda(env, inst.n);
+    // Variables
+    IloBoolVarArray x(env, inst.n_arc);
+    IloNumVarArray lambda(env, inst.n_arc, 0.0, IloInfinity);
     IloBoolVarArray y(env, inst.n);
-    IloNumVarArray beta(env, inst.n);
-    IloNumVar alpha(env);
-    IloNumVar eta(env);
+    IloNumVarArray beta(env, inst.n, 0.0, IloInfinity);
+    IloNumVar alpha(env, 0.0, IloInfinity);
+    IloNumVar eta(env, 0.0, IloInfinity);
 
-    std::string name;
-
-    name = "alpha";
-    alpha = IloNumVar(env, 0.0, IloInfinity, name.c_str());
-    name = "eta";
-    eta = IloNumVar(env, 0.0, IloInfinity, name.c_str());
-
-    for (unsigned int i = 0; i < inst.n; ++i) {
-        x[i] = IloBoolVarArray(env, inst.n);
-        lambda[i] = IloNumVarArray(env, inst.n);
-        for (unsigned int j = 0; j < inst.n; ++j) {
-            name = "x_" + std::to_string(i) + "_" + std::to_string(j);
-            x[i][j] = IloBoolVar(env, name.c_str());
-            name = "lambda_" + std::to_string(i) + "_" + std::to_string(j);
-            lambda[i][j] = IloNumVar(env, 0.0, IloInfinity, name.c_str());
-        }
-    }
-    for(unsigned int i = 0; i < inst.n; ++i) {
-        name = "y_" + std::to_string(i);
-        y[i] = IloBoolVar(env, name.c_str());
-        name = "beta_"  + std::to_string(i);
-        beta[i] = IloNumVar(env, 0.0, IloInfinity, name.c_str());
-    }
-
-    IloExpr expression_obj(env);
-    expression_obj += inst.d1*eta;
-    for(unsigned int k = 0; k < inst.mat.size(); k++) {
-        Arc v = inst.mat[k];
-        expression_obj += v.d*x[v.i-1][v.j-1] + v.D*lambda[v.i-1][v.j-1];
-    }
-    name = "objective";
-    IloObjective obj(env, expression_obj, IloObjective::Minimize, name.c_str());
+    // Objective
+    IloObjective obj(env, inst.d1*eta + IloScalProd(x, inst.d_vec) + IloScalProd(lambda, inst.D_vec), IloObjective::Minimize);
     model.add(obj);
-    expression_obj.end();
 
     // Constraints
-    for(unsigned int i=0; i<inst.n; i++) {
-        for(unsigned int j=0; j<inst.n; j++) {
-            model.add(eta + lambda[i][j] >= inst.d[i][j]*x[i][j]);
-        }
-    }
-
-    IloExpr expression_cstr(env);
-    for(unsigned int i=0; i<inst.n; i++) {
-        expression_cstr += 2*beta[i] + inst.p[i]*y[i];
-    }
-    model.add(inst.d2*alpha + expression_cstr <= inst.S);
-    expression_cstr.end();
-
-    for(unsigned int i=0; i<inst.n; i++){
-        model.add(alpha + beta[i] >= inst.ph[i]*y[i]);
-    }
-
     for (unsigned int i=0; i<inst.n; i++) {
-        IloExpr expression_cstr(env);
-        for (unsigned int j=0; j<inst.n; j++) {
-            if (inst.d[i][j] == inst.d[i][j]) {
-                expression_cstr += x[i][j];
-            }
+        IloExpr out_arcs_i(env);
+        for (unsigned int a=0; a<inst.n_arc; a++) {
+            if (inst.mat[a].i == i+1)
+                out_arcs_i += x[a];
         }
         if (i != inst.t-1) {
-            model.add(expression_cstr == y[i]);
+            model.add(out_arcs_i == y[i]);
         } else {
-            model.add(expression_cstr == 0);
+            model.add(out_arcs_i == 0);
+            // you can't get out of t
         }
-        expression_cstr.end();
+        out_arcs_i.end();
     }
 
     for (unsigned int j=0; j<inst.n; j++) {
-        IloExpr expression_cstr(env);
-        for (unsigned int i=0; i<inst.n; i++) {
-            if (inst.d[i][j] == inst.d[i][j])
-                expression_cstr += x[i][j];
-            }
-            if (j != inst.s-1) {
-                model.add(expression_cstr == y[j]);
-            } else {
-                model.add(expression_cstr == 0);
+        IloExpr in_arcs_j(env);
+        for (unsigned int a=0; a<inst.n_arc; a++) {
+            if (inst.mat[a].j == j+1)
+                in_arcs_j += x[a];
         }
-        expression_cstr.end();
+        if (j != inst.s-1) {
+            model.add(in_arcs_j == y[j]);
+        } else {
+            model.add(in_arcs_j == 0);
+            // you can't get into s
+        }
+        in_arcs_j.end();
     }
-
     model.add(y[inst.s-1] == 1);
     model.add(y[inst.t-1] == 1);
 
-    IloCplex cplex(model);
-    cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
-    // cplex.setParam(IloCplex::Param::Preprocessing::Presolve, 0);
-    if (verbose<2) {
-        cplex.setOut(env.getNullStream());
-    }
-
-    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-    // cplex.exportModel("model.lp");
-    std::cout << "Solving..." << std::endl;
-    cplex.solve();
-    std::cout << "Done solving" << std::endl;
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-
-    if (cplex.getStatus() == IloAlgorithm::Infeasible)
-        cout << "No dualized Solution for file " << inst.name << endl;
-    else{
-
-        if(verbose >= 1){
-            std::cout << "objective: " << cplex.getObjValue() << std::endl;
-            std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
-            std::cout << "path: ";
-        }
-
-        assert(inst.sol.empty());
-        unsigned int current_node = inst.s-1;
-        while (current_node != inst.t-1) {
-            if(verbose >=1){
-                std::cout << current_node+1 << " ";
-            }
-            inst.sol.push_back(current_node+1);
-            for (unsigned int j=0; j<inst.n; j++) {
-                if ((inst.d[current_node][j] == inst.d[current_node][j])
-                    && (cplex.getValue(x[current_node][j]) == 1)) {
-                current_node = j;
-                break;
-                }
-            }
-        }
-        if (verbose >=1) {
-            std::cout << inst.t << std::endl;
-        }
-        inst.sol.push_back(inst.t);
-
-        if (verbose >=1) {
-            std::cout << "size sol: " << inst.sol.size() << std::endl;
-            for (unsigned int i=0; i<inst.sol.size(); i++) {
-                std::cout << inst.sol[i] << " ";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << inst.name << ", " << cplex.getObjValue() << ", "
-            << static_cast<double>(duration.count()) / 1e6 << ", "
-            << cplex.getNnodes() << ", " << cplex.getBestObjValue() << std::endl;
-    }
-}
-
-void dualized_solve_2(IloEnv env, Instance& inst, const unsigned int& time_limit, const int& verbose) {
-
-    IloModel model(env);
-
-    IloBoolVarArray x(env, inst.n_arc);
-    IloBoolVarArray lambda(env, inst.n_arc);
-    IloBoolVarArray y(env, inst.n);
-    IloNumVarArray beta(env, inst.n);
-    IloNumVar alpha(env);
-    IloNumVar eta(env);
-
-    std::stringstream name;
-
-    name << "alpha";
-    alpha = IloNumVar(env, 0.0, IloInfinity, name.str().c_str());
-    name.str("");
-    name << "eta";
-    eta = IloNumVar(env, 0.0, IloInfinity, name.str().c_str());
-    name.str("");
-
-    for(unsigned int a = 0; a < inst.n_arc; ++a) {
-        name << "x_" << a;
-        x[a] = IloBoolVar(env, name.str().c_str());
-        name.str("");
-        name << "lambda_" << a;
-        lambda[a] = IloBoolVar(env, name.str().c_str());
-        name.str("");
-    }
-
-    for(unsigned int i = 0; i < inst.n; ++i) {
-        name << "y_" << i;
-        y[i] = IloBoolVar(env, name.str().c_str());
-        name.str("");
-        name << "beta_" << i;
-        beta[i] = IloNumVar(env, 0.0, IloInfinity, name.str().c_str());
-        name.str("");
-    }
-
-    // IloExpr expression_obj(env);
-    // expression_obj += inst.d1*eta;
-    // for(unsigned int k = 0; k < inst.mat.size(); k++) {
-    //     Arc v = inst.mat[k];
-    //     expression_obj += v.d*x[v.i-1][v.j-1] + v.D*lambda[v.i-1][v.j-1];
-    // }
-    name << "objective";
-    IloObjective obj(env, inst.d1*eta + IloScalProd(x,inst.d_vec)+IloScalProd(lambda,inst.D_vec), IloObjective::Minimize, name.str().c_str());
-    model.add(obj);
-    // expression_obj.end();
-
-    // Constraints
-    // for(unsigned int i=0; i<inst.n; i++) {
-    //     for(unsigned int j=0; j<inst.n; j++) {
-    //         model.add(eta + lambda[i][j] >= inst.d[i][j]*x[i][j]);
-    //     }
-    // }
-    for(unsigned int a = 0; a < inst.n_arc; ++a) {
+    for (unsigned int a = 0; a < inst.n_arc; ++a) {
         model.add(eta + lambda[a] >= inst.d_vec[a]*x[a]);
     }
+    model.add(inst.d2*alpha + 2*IloSum(beta) + IloScalProd(y, inst.p) <= inst.S);
 
-    IloExpr expression_cstr(env);
-    for(unsigned int i=0; i<inst.n; i++) {
-        expression_cstr += 2*beta[i] + inst.p[i]*y[i];
-    }
-    model.add(inst.d2*alpha + expression_cstr <= inst.S);
-    expression_cstr.end();
-
-    for(unsigned int i=0; i<inst.n; i++){
+    for (unsigned int i=0; i<inst.n; i++) {
         model.add(alpha + beta[i] >= inst.ph[i]*y[i]);
     }
 
-    // for (unsigned int i=0; i<inst.n; i++) {
-    //     IloExpr expression_cstr(env);
-    //     for (unsigned int j=0; j<inst.n; j++) {
-    //         if (inst.d[i][j] == inst.d[i][j]) {
-    //             expression_cstr += x[i][j];
-    //         }
-    //     }
-    //     if (i != inst.t-1) {
-    //         model.add(expression_cstr == y[i]);
-    //     } else {
-    //         model.add(expression_cstr == 0);
-    //     }
-    //     expression_cstr.end();
-    // }
-
-    // for (unsigned int j=0; j<inst.n; j++) {
-    //     IloExpr expression_cstr(env);
-    //     for (unsigned int i=0; i<inst.n; i++) {
-    //         if (inst.d[i][j] == inst.d[i][j])
-    //             expression_cstr += x[i][j];
-    //         }
-    //         if (j != inst.s-1) {
-    //             model.add(expression_cstr == y[j]);
-    //         } else {
-    //             model.add(expression_cstr == 0);
-    //     }
-    //     expression_cstr.end();
-    // }
-
-    for(unsigned int i=0; i<inst.n; i++) {
-      IloExpr expression_cstr(env);
-      for(unsigned int a=0; a<inst.n_arc; a++){
-        if(inst.mat[a].i == i+1){
-          expression_cstr += x[a];
-        }
-      }
-      if (i != inst.t-1) {
-          model.add(expression_cstr == y[i]);
-      } 
-      else {
-        model.add(expression_cstr == 0);
-        // On ne peut pas sortir de t
-      }
-      expression_cstr.end();
-    }
-
-    for(unsigned int j=0; j<inst.n; j++) {
-      IloExpr expression_cstr(env);
-      for(unsigned int a=0; a<inst.n_arc; a++){
-        if(inst.mat[a].j == j+1){
-          expression_cstr += x[a];
-        }
-      }
-      if (j != inst.s-1) {
-          model.add(expression_cstr == y[j]);
-      } 
-      else {
-        model.add(expression_cstr == 0);
-        // On ne peut pas entrer dans s
-      }
-      expression_cstr.end();
-    }
-
-    model.add(y[inst.s-1] == 1);
-    model.add(y[inst.t-1] == 1);
-
     IloCplex cplex(model);
     cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
-    // cplex.setParam(IloCplex::Param::Preprocessing::Presolve, 0);
-    if (verbose<2) {
+    if (verbose < 2) {
         cplex.setOut(env.getNullStream());
     }
 
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-    // cplex.exportModel("model.lp");
-    std::cout << "Solving..." << std::endl;
     cplex.solve();
-    std::cout << "Done solving" << std::endl;
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
-    if (cplex.getStatus() == IloAlgorithm::Infeasible)
-        cout << "No dualized Solution for file " << inst.name << endl;
-    else{
-
-        if(verbose >= 1){
-            std::cout << "objective: " << cplex.getObjValue() << std::endl;
-            std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
-            std::cout << "path: ";
-        }
-
-        assert(inst.sol.empty());
-        unsigned int current_node = inst.s-1;
-        while (current_node != inst.t-1) {
-          if(verbose >= 1){
-              std::cout << current_node+1 << " ";
-          }
-          inst.sol.push_back(current_node+1);
-          // for (unsigned int j=0; j<inst.n; j++) {
-          //   if ((inst.d[current_node][j] == inst.d[current_node][j])
-          //       && (cplex.getValue(x[current_node][j]) == 1)) {
-          //     current_node = j;
-          //     break;
-          //   }
-          // }
-          for(unsigned int a=0; a<inst.n_arc; a++){
-            if(inst.mat[a].i == current_node+1 && cplex.getValue(x[a]) == 1){
-              current_node = inst.mat[a].j-1;
-              break;
-            }
-          }
-        }
-        if(verbose >=1)
-            std::cout << inst.t << std::endl;
-        inst.sol.push_back(inst.t);
-
-        if (verbose >=1) {
-            std::cout << "size sol: " << inst.sol.size() << std::endl;
-            for (unsigned int i=0; i<inst.sol.size(); i++) {
-                std::cout << inst.sol[i] << " ";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << inst.name << ", " << cplex.getObjValue() << ", "
-            << static_cast<double>(duration.count()) / 1e6 << ", "
-            << cplex.getNnodes() << ", " << cplex.getBestObjValue() << std::endl;
+    if (cplex.getStatus() == IloAlgorithm::Infeasible) {
+        std::cout << inst.name << "," << "dualized,,,,,,,,," << std::endl;
+        throw std::domain_error("Infeasible dualized model for instance " + inst.name);
+    } else if (cplex.getStatus() == IloAlgorithm::Unknown) {
+        std::cout << inst.name << "," << "dualized,,,,,,,,," << std::endl;
+        throw std::domain_error("No solution found for instance " + inst.name + ". Maybe not enough time");
     }
+
+    assert(inst.sol.empty());
+    std::string path_str = "[";
+    unsigned int current_node = inst.s-1;
+    while (current_node != inst.t-1) {
+        path_str += std::to_string(current_node+1) + ";";
+        inst.sol.push_back(current_node+1);
+        for (unsigned int a=0; a<inst.n_arc; a++) {
+            if (inst.mat[a].i == current_node+1 && cplex.getValue(x[a]) == 1) {
+                current_node = inst.mat[a].j-1;
+                break;
+            }
+        }
+        if (current_node == inst.sol[inst.sol.size()-1]-1) {
+            std::cout << inst.name << "," << "dualized,,,,,,,,," << std::endl;
+            throw std::domain_error("Using arc that does not exist for instance " + inst.name);
+        }
+    }
+    inst.sol.push_back(inst.t);
+    path_str += std::to_string(inst.t) + "]";
+
+    double robust_cost = inst.compute_robust_score(env);
+    if (abs(robust_cost - cplex.getObjValue()) > 1e-3) {
+        std::cout << inst.name << "," << "dualized,,,,,,,,," << std::endl;
+        throw std::domain_error("Robust cost and CPLEX cost do not match for instance " + inst.name);
+    }
+
+    std::cout << inst.name << ","
+        << "dualized,"
+        << cplex.getObjValue() << ","
+        << cplex.getBestObjValue() << ","
+        << static_cast<double>(duration.count()) / 1e6 << ","
+        << cplex.getNnodes() << ","
+        << inst.compute_robust_constraint(env) << ","
+        << inst.compute_static_score() << ","
+        << inst.compute_static_constraint() << ","
+        << inst.S << ","
+        << path_str << std::endl;
 }

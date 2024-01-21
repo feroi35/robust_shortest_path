@@ -1,30 +1,31 @@
 method="dualized"
-verbose="0"
+verbose=0
 
-# faudrait essayer que en changeant la methode ca change le fichier de sortie
-GLOBAL_CSV="results/dualized_results.csv"
+GLOBAL_CSV="results/${method}_results_bis.csv"
 repo_instances="data/processed"
+verbose=0
 
 # Supprimer le fichier CSV global s'il existe déjà
 rm -f $GLOBAL_CSV
 
 # En-tête du fichier CSV global
-echo "instance,objective,time,nb_nodes,lower_bound" > $GLOBAL_CSV
+echo "instance,method,objective,lower_bound,time,nb_nodes,robust_constraint,static_objective,static_constraint,S,path" > $GLOBAL_CSV
 
 make release
 
-count=0
+count=1
 for file in "$repo_instances"/*.gr
 do
-    echo "Running file: $file"
+    echo "Running file: $file, $count/123"
     ./myprogram "$file" "$method" "$verbose" >> "$GLOBAL_CSV"
-    # if [ "$count" -lt 2 ]; then
-    #     echo "Running file: $file"
-    #     ./myprogram "$file" >> "$GLOBAL_CSV"
+    ((count++))
+    # if [ "$count" -lt 5 ]; then
+    #     echo "Running file: $file, $count/123"
+    #     ./myprogram "$file" "$method" $verbose >> "$GLOBAL_CSV"
     #     ((count++))
     # else
     #     break
     # fi
 done
 
-make clean
+# make clean

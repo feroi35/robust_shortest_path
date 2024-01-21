@@ -6,7 +6,6 @@
 
 
 int main(int argc, char **argv) {
-
     if (argc < 3) {
         std::cerr << "Usage: " << argv[0] << " <filename>" << "method" << "(verbose)" << std::endl;
         exit(1);
@@ -17,43 +16,39 @@ int main(int argc, char **argv) {
     if (argc > 3) {
         verbose = atoi(argv[3]);
     }
-    unsigned int time_limit = 120;
-    unsigned int time_limit_robust_obj = 60;
-    unsigned int time_limit_robust_cstr = 60;
+    unsigned int time_limit = 300;
 
     IloEnv env;
     Instance instance(env, filename);
-    // instance.display();
+    if (verbose > 3)
+        instance.display();
 
     try {
         if(strcmp(method, "static") == 0) {
             static_solve(env, instance, time_limit, verbose);
         } else if (strcmp(method, "dualized") == 0){
-            cout << "dualized 1 " << endl;
             dualized_solve(env, instance, time_limit, verbose);
-            cout << "dualized 2 " << endl;
-            dualized_solve_2(env, instance, time_limit, verbose);
         } else {
             std::cerr << "Method not recognized: " << method << std::endl;
             std::cerr << "Method should be either 'static' or 'dualized'" << std::endl;
             exit(1);
         }
+        if (verbose > 0) {
+            std::cout << std::endl;
+            std::cout << "static objective = " << instance.compute_static_score() << std::endl;
+            std::cout << "robust objective = " << instance.compute_robust_score(env) << std::endl;
+            std::cout << "static constraint = " << instance.compute_static_constraint() << std::endl;
+            std::cout << "robust constraint  = " << instance.compute_robust_constraint(env) << std::endl;
+            std::cout << "S = " << instance.S << std::endl;
+        }
     } catch (IloException& e) {
-        std::cerr << "Concert exception caught: " << e << std::endl;
+        std::cerr << "Ilo exception caught: " << e << std::endl;
+    } catch (std::domain_error& e) {
+        std::cerr << "Domain error caught: " << e.what() << std::endl;
     } catch (...) {
         std::cerr << "Unknown exception caught" << std::endl;
-    }	
-
-    if(verbose > 0){
-        std::cout << std::endl;
-        double static_obj = instance.compute_static_score(verbose);
-        std::cout << "static objective = " << static_obj << std::endl;
-        double robust_obj = instance.compute_robust_score(env, instance.sol, time_limit_robust_obj, verbose);
-        std::cout << "robust objective = " << robust_obj << std::endl;
-        double robust_cstr = instance.compute_robust_constraint(env, instance.sol, time_limit_robust_cstr, verbose);
-        std::cout << "robust constraint  = " << robust_cstr << " with S = " << instance.S << std::endl;
     }
 
-    env.end(); 
+    env.end();
     return 0;
 }
