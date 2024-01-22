@@ -1,6 +1,3 @@
-#include <chrono>
-#include <string>
-#include <iostream>
 #include "static_solve.h"
 #include "parser.h"
 
@@ -18,12 +15,15 @@ void static_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, co
 
     // Constraints
     model.add(IloScalProd(y, inst.p) <= inst.S);
-
     for (unsigned int i=0; i<inst.n; i++) {
+        // Flow conservation
         IloExpr out_arcs_i(env);
+        IloExpr in_arcs_i(env);
         for (unsigned int a=0; a<inst.n_arc; a++) {
-            if (inst.mat[a].i == i+1)
+            if (inst.mat[a].tail == i+1)
                 out_arcs_i += x[a];
+            if (inst.mat[a].head == i+1)
+                in_arcs_i += x[a];
         }
         if (i != inst.t-1) {
             model.add(out_arcs_i == y[i]);
@@ -31,24 +31,15 @@ void static_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, co
             model.add(out_arcs_i == 0);
             // you can't get out of t
         }
-        out_arcs_i.end();
-    }
-
-    for (unsigned int j=0; j<inst.n; j++) {
-        IloExpr in_arcs_j(env);
-        for (unsigned int a=0; a<inst.n_arc; a++) {
-            if(inst.mat[a].j == j+1)
-                in_arcs_j += x[a];
-        }
-        if (j != inst.s-1) {
-            model.add(in_arcs_j == y[j]);
+        if (i != inst.s-1) {
+            model.add(in_arcs_i == y[i]);
         } else {
-            model.add(in_arcs_j == 0);
+            model.add(in_arcs_i == 0);
             // you can't get into s
         }
-        in_arcs_j.end();
+        out_arcs_i.end();
+        in_arcs_i.end();
     }
-
     model.add(y[inst.s-1] == 1);
     model.add(y[inst.t-1] == 1);
 
@@ -69,15 +60,15 @@ void static_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, co
         throw std::domain_error("No solution found for instance " + inst.name + ". Maybe not enough time");
     }
 
-    assert(inst.sol.empty());
+    assert(inst.solution.empty());
     std::string path_str = "[";
     unsigned int current_node = inst.s-1;
     while (current_node != inst.t-1) {
         path_str += std::to_string(current_node+1) + ";";
         inst.sol.push_back(current_node+1);
         for (unsigned int a=0; a<inst.n_arc; a++) {
-            if (inst.mat[a].i == current_node+1 && cplex.getValue(x[a]) == 1) {
-                current_node = inst.mat[a].j-1;
+            if (inst.mat[a].tail == current_node+1 && cplex.getValue(x[a]) == 1) {
+                current_node = inst.mat[a].head-1;
                 break;
             }
         }

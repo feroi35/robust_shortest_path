@@ -2,13 +2,15 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include <ilcplex/ilocplex.h> // better to do a forward declaration?
+// Avoid putting include in header files, but these one are needed in all files
+#include <ilcplex/ilocplex.h>
 ILOSTLBEGIN // macro to avoid incompatibility. Important to be before the other includes
+#include <chrono>
 #include <vector>
 
 struct Arc {
-    IloInt i;
-    IloInt j;
+    IloInt head;
+    IloInt tail;
     IloNum d;
     IloNum D;
 };
@@ -40,10 +42,13 @@ struct Instance {
     double compute_static_constraint() const { return compute_static_constraint(sol); }
     double compute_robust_constraint(IloEnv env, const unsigned int& time_limit=60, const int& verbose=0) const { return compute_robust_constraint(env, sol, time_limit, verbose); }
 
-    double compute_static_score(const std::vector<IloInt>& sol) const;
-    double compute_robust_score(IloEnv env, const std::vector<IloInt>& sol, const unsigned int& time_limit =60, const int& verbose=0) const;
-    double compute_static_constraint(const std::vector<IloInt>& sol) const;
-    double compute_robust_constraint(IloEnv env, const std::vector<IloInt>& sol, const unsigned int& time_limit=60, const int& verbose=0) const;
+    double compute_static_score(const std::vector<IloInt>& solution) const;
+    double compute_robust_score(IloEnv env, const std::vector<IloInt>& solution, const unsigned int& time_limit=60, const int& verbose=0) const;
+    double compute_static_constraint(const std::vector<IloInt>& solution) const;
+    double compute_robust_constraint(IloEnv env, const std::vector<IloInt>& solution, const unsigned int& time_limit=60, const int& verbose=0) const;
+
+    // résolution des sous-problèmes en récupérant les valeurs des variables
+    double compute_robust_score(IloEnv env, const std::vector<IloInt>& solution, std::vector<IloNum>& delta1, const unsigned int& time_limit=60, const int& verbose=0) const;
 };
 
 
