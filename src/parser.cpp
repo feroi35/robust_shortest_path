@@ -42,6 +42,11 @@ Instance::Instance(IloEnv env, char filename[]) {
     // ] mat = [
     file >> readChar >> readChar >> readChar >> readChar >> readChar >> readChar;
 
+    // std::map<Index,double> d_;
+    // std::map<Index,double> D_;
+    std::vector<std::vector<double>> d_(n, std::vector<double>(n, undefinedValue));
+    std::vector<std::vector<double>> D_(n, std::vector<double>(n, undefinedValue));
+
     while (readChar != ']') {
         Arc v;
         file >> v.i;
@@ -49,12 +54,27 @@ Instance::Instance(IloEnv env, char filename[]) {
         file >> v.d;
         file >> v.D;
         file >> readChar; // either ';' or ']'
+        // d_[Index(v.i-1,v.j-1)] = v.d;
+        // D_[Index(v.i-1,v.j-1)] = v.D;
+        d_[v.i-1][v.j-1] = v.d;
+        D_[v.i-1][v.j-1] = v.D;
         mat.push_back(v);
         d_vec.add(v.d);
         D_vec.add(v.D);
     }
     file.close();
+    d = d_;
+    D = D_;
     n_arc = mat.size();
+
+    std::vector<std::vector<int>>* neighbors = new std::vector<std::vector<int>>(n);
+    std::vector<std::vector<int>>* reverse_neighbors = new std::vector<std::vector<int>>(n);
+    for (unsigned int a=0; a<n_arc; a++) {
+        neighbors->at(mat[a].i-1).push_back(mat[a].j-1);
+        reverse_neighbors->at(mat[a].j-1).push_back(mat[a].i-1);
+    }
+    neighbors_list = neighbors;
+    reverse_neighbors_list = reverse_neighbors;
 }
 
 

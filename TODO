@@ -116,3 +116,12 @@ Running file: data/processed/1000_USA-road-d.COL.gr, 2/123
 Advanced basis not built.
 
 Que signifie "Advanced basis not built" ?
+
+
+## 23.01 r
+error run_all dualized:
+1800_COL, 2200_COL, 2200_NY, 2500_COL: mismatch robust_cost cplex_cost ; 
+2100_NY: using missing arc;
+2300_COL: advance basis not built + robust cost and cplex_cost mismatch;
+2400_COL: no solution found;
+

@@ -3,6 +3,7 @@
 #include "parser.h"
 #include "static_solve.h"
 #include "dualized_formulation.h"
+#include "heuristics.h"
 
 
 int main(int argc, char **argv) {
@@ -16,7 +17,7 @@ int main(int argc, char **argv) {
     if (argc > 3) {
         verbose = atoi(argv[3]);
     }
-    unsigned int time_limit = 300;
+    unsigned int time_limit = 500;
 
     IloEnv env;
     Instance instance(env, filename);
@@ -24,7 +25,12 @@ int main(int argc, char **argv) {
         instance.display();
 
     try {
-        if(strcmp(method, "static") == 0) {
+        if(strcmp(method, "heuristics") == 0){
+            std::vector<double>* backward_dist = backward_dijkstra_distance(instance);
+            std::vector<double>* backward_node = backward_dijkstra_nodes(instance);
+            return 0;
+        }
+        else if(strcmp(method, "static") == 0) {
             static_solve(env, instance, time_limit, verbose);
         } else if (strcmp(method, "dualized") == 0){
             dualized_solve(env, instance, time_limit, verbose);
