@@ -1,10 +1,8 @@
 #include "dualized_formulation.h"
 #include "parser.h"
-#include <chrono>
 
 
 void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, const int& verbose) {
-
     IloModel model(env);
 
     // Variables
@@ -20,11 +18,15 @@ void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, 
     model.add(obj);
 
     // Constraints
+    // Flow conservation
     for (unsigned int i=0; i<inst.n; i++) {
         IloExpr out_arcs_i(env);
+        IloExpr in_arcs_i(env);
         for (unsigned int a=0; a<inst.n_arc; a++) {
-            if (inst.mat[a].i == i+1)
+            if (inst.mat[a].tail == i+1)
                 out_arcs_i += x[a];
+            if (inst.mat[a].head == i+1)
+                in_arcs_i += x[a];
         }
         if (i != inst.t-1) {
             model.add(out_arcs_i == y[i]);
@@ -32,22 +34,14 @@ void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, 
             model.add(out_arcs_i == 0);
             // you can't get out of t
         }
-        out_arcs_i.end();
-    }
-
-    for (unsigned int j=0; j<inst.n; j++) {
-        IloExpr in_arcs_j(env);
-        for (unsigned int a=0; a<inst.n_arc; a++) {
-            if (inst.mat[a].j == j+1)
-                in_arcs_j += x[a];
-        }
-        if (j != inst.s-1) {
-            model.add(in_arcs_j == y[j]);
+        if (i != inst.s-1) {
+            model.add(in_arcs_i == y[i]);
         } else {
-            model.add(in_arcs_j == 0);
+            model.add(in_arcs_i == 0);
             // you can't get into s
         }
-        in_arcs_j.end();
+        out_arcs_i.end();
+        in_arcs_i.end();
     }
     model.add(y[inst.s-1] == 1);
     model.add(y[inst.t-1] == 1);
@@ -56,16 +50,14 @@ void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, 
         model.add(eta + lambda[a] >= inst.d_vec[a]*x[a]);
     }
     model.add(inst.d2*alpha + 2*IloSum(beta) + IloScalProd(y, inst.p) <= inst.S);
-
     for (unsigned int i=0; i<inst.n; i++) {
         model.add(alpha + beta[i] >= inst.ph[i]*y[i]);
     }
 
+    // Solve
     IloCplex cplex(model);
     cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
-    if (verbose < 2) {
-        cplex.setOut(env.getNullStream());
-    }
+    if (verbose < 2) cplex.setOut(env.getNullStream());
 
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     cplex.solve();
@@ -87,8 +79,8 @@ void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, 
         path_str += std::to_string(current_node+1) + ";";
         inst.sol.push_back(current_node+1);
         for (unsigned int a=0; a<inst.n_arc; a++) {
-            if (inst.mat[a].i == current_node+1 && cplex.getValue(x[a]) == 1) {
-                current_node = inst.mat[a].j-1;
+            if (inst.mat[a].tail == current_node+1 && cplex.getValue(x[a]) == 1) {
+                current_node = inst.mat[a].head-1;
                 break;
             }
         }

@@ -3,7 +3,6 @@ verbose=0
 
 GLOBAL_CSV="results/${method}_results_bis.csv"
 repo_instances="data/processed"
-verbose=0
 
 # Supprimer le fichier CSV global s'il existe déjà
 rm -f $GLOBAL_CSV
