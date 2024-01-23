@@ -6,12 +6,21 @@
 - Résolution des sous-problèmes, c'est tellement overkill de résoudre le MILP
 Si l'on trie au début les D et les poids des villes, il suffit de donner le plus gros coefficient aux premières villes/ aux premiers arcs. 
 On va l'appeler en callback, donc c'est important que ce soit rapide. Appeler CPLEX, rien que l'interface, j'imagine que ça prend du temps alors que le problème est hyper simple à résoudre sans l'appeler. 
-- Faire les outils graphiques. Nombre d'instances résolus par rapport au temps de résolution
+
+Pour cela, faire un tri lors de la création de l'instance.
+Par ordre décroissant de D_vec[a] * d_vect[a] pour le score robuste
+Par ordre décroissant de ph pour la contrainte robuste
+
+Ensuite, il suffit de parcourir dans l'ordre les villes/arcs de la solution et remplir autant que possible les incertitudes
+
+- Faire les outils graphiques. Nombre d'instances résolues par rapport au temps de résolution
 - creuser pourquoi CPLEX trouve autant de symmétries dans la résolution dualized
 - coder les plans coupants
 - coder la résolution CallBack
 - réfléchir et implémenter une heuristique
-- modifier les callBack, ne pas appeler CPLEX, résoudre de manière heuristique (knapsack continu)
+
+- si la solution n'est pas valide (contrainte robuste), faire renvoyer 1,000,000 en score. Ajouter une colonne "admissibilité"?
+
 
 ## 04.01
 

@@ -1,9 +1,9 @@
-#include <cstdlib>
 #include "main.h"
 #include "parser.h"
 #include "static_solve.h"
 #include "dualized_formulation.h"
 #include "heuristics.h"
+#include "branch_and_cut.h"
 
 
 int main(int argc, char **argv) {
@@ -17,12 +17,13 @@ int main(int argc, char **argv) {
     if (argc > 3) {
         verbose = atoi(argv[3]);
     }
-    unsigned int time_limit = 500;
+
+    unsigned int time_limit = 120;
+
 
     IloEnv env;
     Instance instance(env, filename);
-    if (verbose > 3)
-        instance.display();
+    if (verbose > 3) instance.display();
 
     try {
         if(strcmp(method, "heuristics") == 0){
@@ -32,8 +33,10 @@ int main(int argc, char **argv) {
         }
         else if(strcmp(method, "static") == 0) {
             static_solve(env, instance, time_limit, verbose);
-        } else if (strcmp(method, "dualized") == 0){
+        } else if (strcmp(method, "dualized") == 0) {
             dualized_solve(env, instance, time_limit, verbose);
+        } else if (strcmp(method, "branch_and_cut") == 0) {
+            branch_and_cut_solve(env, instance, time_limit, verbose);
         } else {
             std::cerr << "Method not recognized: " << method << std::endl;
             std::cerr << "Method should be either 'static' or 'dualized'" << std::endl;
