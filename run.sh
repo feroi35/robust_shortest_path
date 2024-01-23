@@ -1,6 +1,7 @@
 # file="data/processed/1200_USA-road-d.COL.gr"
 file="data/processed/20_USA-road-d.BAY.gr"
 
+
 method="heuristics"
 verbose=0
 
