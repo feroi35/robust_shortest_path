@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
     if (argc > 3) {
         verbose = atoi(argv[3]);
     }
-    unsigned int time_limit = 120;
+    unsigned int time_limit = 300;
 
     IloEnv env;
     Instance instance(env, filename);
@@ -38,6 +38,7 @@ int main(int argc, char **argv) {
             std::cout << std::endl;
             std::cout << "static objective = " << instance.compute_static_score() << std::endl;
             std::cout << "robust objective = " << instance.compute_robust_score(env) << std::endl;
+            std::cout << "robust objective knapsack = " << instance.compute_robust_score_bis() << std::endl;
             std::cout << "static constraint = " << instance.compute_static_constraint() << std::endl;
             std::cout << "robust constraint  = " << instance.compute_robust_constraint(env) << std::endl;
             std::cout << "S = " << instance.S << std::endl;

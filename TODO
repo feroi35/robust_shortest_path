@@ -21,6 +21,11 @@ Ensuite, il suffit de parcourir dans l'ordre les villes/arcs de la solution et r
 
 - si la solution n'est pas valide (contrainte robuste), faire renvoyer 1,000,000 en score. Ajouter une colonne "admissibilité"?
 
+- Est-ce que ça vaut le coup de mettre des >= à la place des = dans les contraintes ? 
+Equivalence pour des x binaires, mais quid du relâché? A tester
+
+- Dans la résolution par dualisation, si l'on ne tourne pas assez longtemps et que l'on n'arrive pas à l'optimal, la solutoin que renvoie l'algorithme n'est pas forcément la même que le vrai score robuste. On garde la solution courante mais on recalcule le vrai score et on fait attention à ce que la solution soit bien admissible. 
+
 
 ## 04.01
 
@@ -125,3 +130,147 @@ Running file: data/processed/1000_USA-road-d.COL.gr, 2/123
 Advanced basis not built.
 
 Que signifie "Advanced basis not built" ?
+
+## 24.01
+
+Problème: La résolution du sous problème de l'objectif robuste est + rapide avec CLEX qu'avec la résolution d'un knapsack continu (de 2 ordres de grandeur !!)
+robust objective = 42766.5 time: 0.000247
+robust objective bis = 42766.5, time: 0.010604
+
+Le tri doit être lent? 
+Non, time sort = 1.3e-05, négligeable
+
+C'est bon, le temps de calcul avec CPLEX ne prenait en compte que la résolution alors que la construction du problème prend aussi beaucoup de temps. 
+On a bien que la résolution gloutonne de notre knapsack continu est plus rapide. 
+
+robust objective = 42766.5, time: 0.011856
+robust objective bis = 42766.5, time: 0.00619
+
+On perd beaucoup de temps à retrouver les arcs à partir de la solution. C'est la contrepartie de ne pas stocker toute la matrice de distance, ce qui faisait crasher WSL à cause de la mémoire. 
+
+Mais on ne repart jamais de là quand on ajoute des coupes car on a directement les indexes des arcs utilisés. 
+J'ai des coupes qui se passent bien. 
+Puis à un moment, j'ai cette erreur 
+
+free(): invalid next size (fast)
+
+ILOLAZYCONSTRAINTCALLBACK4(myCallBack,IloBoolVarArray, x,
+        IloBoolVarArray, y, IloNumVar, z, Instance, inst) {
+
+    std::cout << "Callback called" << std::endl;
+    IloEnv env = getEnv();
+
+    unsigned int n_edges = getValue(IloSum(x));
+    if (n_edges == 3) {
+        std::cout << "n_edges = " << n_edges << std::endl;
+    }
+    std::vector<IloNum> weights(n_edges, 0.0); // d
+    std::vector<IloNum> uncertainties(n_edges); // D
+    std::vector<IloInt> idx_edges(n_edges);
+    double static_score = 0.0;
+
+    unsigned int count = 0;
+    for (unsigned int a=0; a<inst.n_arc; a++) {
+        if (getValue(x[a]) > 1e-3) {
+            weights[count] = inst.mat[a].d;
+            static_score += inst.mat[a].d;
+            uncertainties[count] = inst.mat[a].D;
+            idx_edges[count] = a;
+            count++;
+            std::cout << inst.mat[a].tail << " -> " << inst.mat[a].head << std::endl;
+            std::cout << getValue(x[a]) << std::endl;
+        }
+    }
+    if (count != n_edges) {
+        std::cout << "Error: count = " << count << " != n_edges = " << n_edges << std::endl;
+    }
+    std::cout << "n_edges = " << n_edges << std::endl;
+    std::cout << "weights = [";
+    for (unsigned int i=0; i<n_edges; i++) {
+        std::cout << weights[i] << " ";
+    }
+    std::cout << "]" << std::endl;
+    std::cout << "uncertainties = [";
+    for (unsigned int i=0; i<n_edges; i++) {
+        std::cout << uncertainties[i] << " ";
+    }
+    std::cout << "]" << std::endl;
+    std::cout << "idx_edges = [";
+    for (unsigned int i=0; i<n_edges; i++) {
+        std::cout << idx_edges[i] << " ";
+    }
+    std::cout << "]" << std::endl;
+
+    std::vector<size_t> argsorted_weights = argsort(weights);
+    double robust_attack = 0.0;
+    double used_budget = 0.0;
+    int idx = n_edges-1;
+    IloExpr expr(env);
+    while (used_budget < inst.d1 && idx >= 0) {
+        unsigned int arc_idx = argsorted_weights[idx];
+        float delta1_i = std::min(inst.d1 - used_budget, uncertainties[arc_idx]);
+        used_budget += delta1_i;
+        robust_attack += delta1_i * weights[arc_idx];
+
+        IloInt real_arc = idx_edges[arc_idx];
+        if (abs(weights[arc_idx] - inst.mat[real_arc].d) > 1e-3) {
+            std::cout << "Error: weights[arc_idx] = " << weights[arc_idx] << " != inst.mat[real_arc].d = " << inst.mat[real_arc].d << std::endl;
+            throw std::domain_error("Error in callBack");
+        }
+        expr += inst.mat[real_arc].d * delta1_i * x[real_arc];
+        idx--;
+    }
+    std::cout << "used_budget = " << used_budget << std::endl;
+    std::cout << "robust_attack = " << robust_attack << std::endl;
+    std::cout << "static_score = " << static_score << std::endl;
+    std::cout << "robust_score = " << static_score + robust_attack << std::endl;
+    std::cout << "z = " << getValue(z) << std::endl;
+    std::cout << expr << " <= z " << std::endl;
+    std::cout << "\n\n\n" << std::endl;
+    expr += IloScalProd(x, inst.d_vec);
+    double robust_score = static_score + robust_attack;
+
+    // Add the violated constraint
+    if (robust_score > getValue(z) + 1e-3) {
+        add(expr <= z);
+    } else {
+        std::cout << "No violated constraint found in callBack" << std::endl;
+    }
+    expr.end();
+}
+
+Pour l'instance 20_USA-road-d.BAY.gr
+A un moment, on trouve que getValue(IloSum(x)) = 3 ie on utilise 3 arcs. 
+Sauf que si l'on regarde tous les arcs utilisés ensuite, il y en a 4
+CPLEX fait n'importe quoi
+
+Et somehow, alors que weights est un vecteur de taille 3
+Ca ne pose pas de problème d'écrire que weights[3] = ...
+
+Il faudrait envoyer un message à CPLEX.
+
+unsigned int a = getValue(IloSum(x))
+# a = 3
+IloInt b = getValue(IloSum(x));
+# b = 3
+float c = getValue(IloSum(x));
+c = 4
+
+C'est n'importe quoi. Je ne peux pas fixer la taille des vecteurs avant alors que ça fait gagner du temps parce que IloSum plante. 
+Donc je vais faire des pushBack même si c'est moche, au moins ça marche
+
+
+Ca marche, ça plie l'instance de taille 20. 
+Mais ça prend 1 minute pour l'instance de taille 1000
+
+Après profiling, toute la lenteur vient de cette boucle
+std::vector<> xValues; 
+for (unsigned int a = 0; a < inst.n_arc; a++) {
+    xValues[a] = getValue(x[a]);
+}
+Cela prend tout le temps du callBack. 
+Comment retrieve ces données sans perdre 40s par coupe?
+
+https://www.ibm.com/docs/en/icos/22.1.1?topic=information-querying-solution-data
+IloNumArray xValues(env);
+getValues(xValues, x);

@@ -113,6 +113,7 @@ double Instance::compute_static_constraint(const std::vector<IloInt>& solution) 
 double Instance::compute_robust_score(IloEnv env, const std::vector<IloInt>& solution,
         const unsigned int& time_limit, const int& verbose) const {
     unsigned int n_var = solution.size()-1; // one variable for each arc
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     IloModel model(env);
 
     // Variables
@@ -153,7 +154,6 @@ double Instance::compute_robust_score(IloEnv env, const std::vector<IloInt>& sol
     cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
     if (verbose < 2) cplex.setOut(env.getNullStream());
 
-    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     cplex.solve();
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -162,78 +162,17 @@ double Instance::compute_robust_score(IloEnv env, const std::vector<IloInt>& sol
         std::cerr << "No Solution" << std::endl;
         throw std::domain_error("No solution in robust objective problem");
     }
-    return cplex.getObjValue();
-}
-
-
-double Instance::compute_robust_score(IloEnv env, const std::vector<IloInt>& solution, std::vector<IloNum>& delta1_vec,
-        const unsigned int& time_limit, const int& verbose) const {
-    // How to write it cleanly?
-
-    unsigned int n_var = solution.size()-1; // one variable for each arc
-    IloModel model(env);
-
-    // Variables
-    IloNumVarArray delta1(env, n_var);
-    unsigned int start_node;
-    unsigned int end_node;
-    for (unsigned int k=0; k < n_var; k++) {
-        start_node = solution[k];
-        end_node = solution[k+1];
-        for (unsigned int a = 0; a < n_arc; a++) {
-            if (mat[a].tail == start_node && mat[a].head == end_node) {
-                delta1[k] = IloNumVar(env, 0.0, D_vec[a]);
-                break;
-            }
-        }
-    }
-
-    // Objective
-    IloExpr expression_obj(env);
-    for (unsigned int k=0; k < n_var; k++) {
-        start_node = solution[k];
-        end_node = solution[k+1];
-        for (unsigned int a = 0; a < n_arc; a++) {
-            if (mat[a].tail == start_node && mat[a].head == end_node) {
-                expression_obj += mat[a].d * (1 + delta1[k]);
-                break;
-            }
-        }
-    }
-    IloObjective obj(env, expression_obj, IloObjective::Maximize);
-    model.add(obj);
-    expression_obj.end();
-
-    // Constraints
-    model.add(IloSum(delta1) <= d1);
-
-    IloCplex cplex(model);
-    cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
-    if (verbose < 2) cplex.setOut(env.getNullStream());
-
-    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-    cplex.solve();
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-
-    if (cplex.getStatus() == IloAlgorithm::Infeasible) {
-        std::cerr << "No Solution" << std::endl;
-        throw std::domain_error("No solution in robust objective problem");
-    }
-
-    // Get the values of delta1
-    delta1_vec = std::vector<IloNum>(n, 0.0);
-    for (unsigned int k=0; k < n_var; k++) {
-        IloInt node = solution[k];
-        delta1_vec[node-1] = cplex.getValue(delta1[node-1]);
+    if (verbose >= 1) {
+        std::cout << "robust objective: " << cplex.getObjValue() << std::endl;
+        std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
     }
     return cplex.getObjValue();
 }
-
 
 
 double Instance::compute_robust_constraint(IloEnv env, const std::vector<IloInt>& solution,
         const unsigned int& time_limit,const int& verbose) const {
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     unsigned int n_sol = solution.size();
     IloModel model(env);
 
@@ -258,7 +197,6 @@ double Instance::compute_robust_constraint(IloEnv env, const std::vector<IloInt>
     cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
     if (verbose < 2) cplex.setOut(env.getNullStream());
 
-    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     cplex.solve();
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -272,4 +210,38 @@ double Instance::compute_robust_constraint(IloEnv env, const std::vector<IloInt>
         std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
     }
     return cplex.getObjValue();
+}
+
+
+double Instance::compute_robust_score_bis(const std::vector<IloInt>& solution, const unsigned int& time_limit, const int& verbose) const {
+    unsigned int n_edges = solution.size()-1; // one variable for each arc
+    std::vector<IloNum> weights(n_edges, 0.0); // on extrait les poids des arcs
+    std::vector<IloNum> uncertainties(n_edges, 0.0); // on extrait les incertitudes des arcs
+
+    unsigned int current_node = solution[0];
+    double static_score = 0.0;
+    for (unsigned int k=1; k < n_edges+1; k++) {
+        unsigned int next_node = solution[k];
+        for (unsigned int a=0; a < n_arc; a++) {
+            if (mat[a].tail == current_node && mat[a].head == next_node) {
+                weights[k-1] = mat[a].d;
+                uncertainties[k-1] = mat[a].D;
+                static_score += mat[a].d;
+                break;
+            }
+        }
+        current_node = next_node;
+    }
+    std::vector<size_t> argsorted_weights = argsort(weights);
+    double robust_attack = 0.0;
+    double used_budget = 0.0;
+    int idx = n_edges-1;
+    while (used_budget < d1 && idx >= 0) {
+        unsigned int arc_idx = argsorted_weights[idx];
+        float delta1_i = std::min(d1 - used_budget, uncertainties[arc_idx]);
+        used_budget += delta1_i;
+        robust_attack += delta1_i * weights[arc_idx];
+        idx--;
+    }
+    return static_score + robust_attack;
 }
