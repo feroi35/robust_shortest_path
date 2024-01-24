@@ -21,6 +21,10 @@ template <typename T> std::vector<size_t> argsort(const vector<T> &v) {
     std::stable_sort(idx.begin(), idx.end(), [&v](size_t i1, size_t i2) {return v[i1] < v[i2];});
     return idx;
 }
+// #include <tuple>
+// #include <map>
+
+const double undefinedValue = std::numeric_limits<double>::quiet_NaN();
 
 struct Arc {
     IloInt head;
@@ -28,6 +32,18 @@ struct Arc {
     IloNum d;
     IloNum D;
 };
+
+
+class Index{
+    public:
+        int i;
+        int j;
+        Index(int i, int j): i(i), j(j) {};
+        bool operator<(const Index& other) const {
+            return (i < other.i) || (i == other.i && j < other.j);
+        }
+};
+
 
 
 struct Instance {
@@ -43,7 +59,15 @@ struct Instance {
     IloNumArray ph; // incertitudes poids des villes
     IloNumArray d_vec; // durée de trajet des arcs
     IloNumArray D_vec; // incertitude durée de trajet des arcs
+    // std::map<Index,double> d; // matrice des durées de trajet
+    // std::map<Index,double> D; // matrice des incertitudes des durées de trajet
+    std::vector<std::vector<double>> d; // matrice des durées de trajet
+    std::vector<std::vector<double>> D; // matrice des incertitudes des durées de trajet
     std::vector<Arc> mat;
+    std::vector<std::vector<int>>* neighbors_list;
+    std::vector<std::vector<int>>* reverse_neighbors_list;
+
+
 
     std::vector<IloInt> sol; // liste des villes visitées dans l'ordre
 

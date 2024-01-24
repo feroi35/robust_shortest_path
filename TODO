@@ -131,6 +131,15 @@ Advanced basis not built.
 
 Que signifie "Advanced basis not built" ?
 
+
+## 23.01 r
+error run_all dualized:
+1800_COL, 2200_COL, 2200_NY, 2500_COL: mismatch robust_cost cplex_cost ; 
+2100_NY: using missing arc;
+2300_COL: advance basis not built + robust cost and cplex_cost mismatch;
+2400_COL: no solution found;
+
+
 ## 24.01
 
 Problème: La résolution du sous problème de l'objectif robuste est + rapide avec CLEX qu'avec la résolution d'un knapsack continu (de 2 ordres de grandeur !!)
@@ -274,3 +283,4 @@ Comment retrieve ces données sans perdre 40s par coupe?
 https://www.ibm.com/docs/en/icos/22.1.1?topic=information-querying-solution-data
 IloNumArray xValues(env);
 getValues(xValues, x);
+
