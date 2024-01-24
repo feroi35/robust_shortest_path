@@ -6,7 +6,7 @@ CONCERTDIR    = $(CPLEX)/concert/
 # ---------------------------------------------------------------------
 # Compiler selection, code optimization, debug, and warning options
 # ---------------------------------------------------------------------
-CCFLAGS = -O3 -m64 -Wall -Wno-ignored-attributes -g -DNDEBUG
+CCFLAGS = -O3 -m64 -Wall -Wno-ignored-attributes -g #-DNDEBUG
 # use DNDEBUG to remove asserts and turn off some clog debug messages
 
 # Debug build flags
@@ -43,9 +43,9 @@ TARGET = myprogram
 $(SRCDIR)/%.o: $(SRCDIR)/%.cpp $(INCDIR)/%.h
 	$(CXX) $(CCFLAGSCPLEX) -c $< -o $@
 
-# # Debug build rule for object files
-# $(SRCDIR)/%.o: $(SRCDIR)/%.cpp $(INCDIR)/%.h
-# 	$(CXX) $(CCFLAGSCPLEX) $(DEBUGFLAGS) -c $< -o $@
+# Debug build rule for object files
+$(SRCDIR)/%.o: $(SRCDIR)/%.cpp $(INCDIR)/%.h
+	$(CXX) $(CCFLAGSCPLEX) $(DEBUGFLAGS) -c $< -o $@
 
 # Debug build
 debug: $(OBJS)

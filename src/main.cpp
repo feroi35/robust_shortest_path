@@ -5,6 +5,8 @@
 #include "heuristics.h"
 #include "branch_and_cut.h"
 
+#include <typeinfo> // for debug purpose
+
 
 int main(int argc, char **argv) {
     if (argc < 3) {
@@ -27,8 +29,21 @@ int main(int argc, char **argv) {
 
     try {
         if(strcmp(method, "heuristics") == 0){
-            std::vector<double>* backward_dist = backward_dijkstra_distance(instance);
-            std::vector<double>* backward_node = backward_dijkstra_nodes(instance);
+            cout << "into heuristics" << endl;
+
+            Heuristic_instance heur(instance);
+            heur.inf_dist = heur.backward_dijkstra_distance(instance);
+            heur.inf_dist_nodes = heur.backward_dijkstra_nodes(instance);
+            std::vector<int> sol = heur.astar_solve(instance, 0.8, verbose);
+            std::cout << "Solution: ";
+            for (auto it = sol.begin(); it != sol.end(); ++it) {
+                std::cout << *it << " ";
+            }
+            cout << " " << endl;
+            std::cout << "static objective = " << compute_static_score(instance, sol) << std::endl;
+            std::cout << "robust objective = " << compute_robust_score(instance, sol) << std::endl;
+            std::cout << "static constraint = " << compute_static_constraint(instance, sol) << std::endl;
+            std::cout << "robust constraint  = " << compute_robust_constraint(instance, sol) << " for S = " << instance.S << std::endl;
             return 0;
         }
         else if(strcmp(method, "static") == 0) {
@@ -36,7 +51,7 @@ int main(int argc, char **argv) {
         } else if (strcmp(method, "dualized") == 0) {
             dualized_solve(env, instance, time_limit, verbose);
         } else if (strcmp(method, "branch_and_cut") == 0) {
-            branch_and_cut_solve(env, instance, time_limit, verbose);
+            // branch_and_cut_solve(env, instance, time_limit, verbose);
         } else {
             std::cerr << "Method not recognized: " << method << std::endl;
             std::cerr << "Method should be either 'static' or 'dualized'" << std::endl;

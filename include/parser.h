@@ -20,15 +20,15 @@ struct Arc {
 };
 
 
-class Index{
-    public:
-        int i;
-        int j;
-        Index(int i, int j): i(i), j(j) {};
-        bool operator<(const Index& other) const {
-            return (i < other.i) || (i == other.i && j < other.j);
-        }
-};
+// class Index{
+//     public:
+//         int i;
+//         int j;
+//         Index(int i, int j): i(i), j(j) {};
+//         bool operator<(const Index& other) const {
+//             return (i < other.i) || (i == other.i && j < other.j);
+//         }
+// };
 
 
 
@@ -47,18 +47,19 @@ struct Instance {
     IloNumArray D_vec; // incertitude durée de trajet des arcs
     // std::map<Index,double> d; // matrice des durées de trajet
     // std::map<Index,double> D; // matrice des incertitudes des durées de trajet
-    std::vector<std::vector<double>> d; // matrice des durées de trajet
-    std::vector<std::vector<double>> D; // matrice des incertitudes des durées de trajet
+    std::vector<std::vector<float>> d; // matrice des durées de trajet
+    std::vector<std::vector<float>> D; // matrice des incertitudes des durées de trajet
     std::vector<Arc> mat;
-    std::vector<std::vector<int>>* neighbors_list;
-    std::vector<std::vector<int>>* reverse_neighbors_list;
-
-
+    std::vector<std::vector<int>> neighbors_list;
+    std::vector<std::vector<int>> reverse_neighbors_list;
 
     std::vector<IloInt> sol; // liste des villes visitées dans l'ordre
 
+    Instance(){};
     Instance(IloEnv env, char filename[]);
-    ~Instance(){};
+    ~Instance(){}; //delete neighbors_list; delete reverse_neighbors_list;
+    Instance(const Instance& instan);
+
     void display() const;
 
     double compute_static_score() const { return compute_static_score(sol); }
