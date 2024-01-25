@@ -59,11 +59,13 @@ struct Instance {
     IloNumArray ph; // incertitudes poids des villes
     IloNumArray d_vec; // durée de trajet des arcs
     IloNumArray D_vec; // incertitude durée de trajet des arcs
+    std::vector<Arc> mat;
+
+    // Prend la dose de mémoire en dessous
     // std::map<Index,double> d; // matrice des durées de trajet
     // std::map<Index,double> D; // matrice des incertitudes des durées de trajet
     std::vector<std::vector<double>> d; // matrice des durées de trajet
     std::vector<std::vector<double>> D; // matrice des incertitudes des durées de trajet
-    std::vector<Arc> mat;
     std::vector<std::vector<int>>* neighbors_list;
     std::vector<std::vector<int>>* reverse_neighbors_list;
 

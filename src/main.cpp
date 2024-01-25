@@ -4,6 +4,7 @@
 #include "dualized_formulation.h"
 #include "heuristics.h"
 #include "branch_and_cut.h"
+#include "plans_coupants.h"
 
 
 int main(int argc, char **argv) {
@@ -17,7 +18,7 @@ int main(int argc, char **argv) {
     if (argc > 3) {
         verbose = atoi(argv[3]);
     }
-    unsigned int time_limit = 300;
+    unsigned int time_limit = 60;
 
 
     IloEnv env;
@@ -26,8 +27,8 @@ int main(int argc, char **argv) {
 
     try {
         if(strcmp(method, "heuristics") == 0){
-            std::vector<double>* backward_dist = backward_dijkstra_distance(instance);
-            std::vector<double>* backward_node = backward_dijkstra_nodes(instance);
+            // std::vector<double>* backward_dist = backward_dijkstra_distance(instance);
+            // std::vector<double>* backward_node = backward_dijkstra_nodes(instance);
             return 0;
         }
         else if(strcmp(method, "static") == 0) {
@@ -36,6 +37,8 @@ int main(int argc, char **argv) {
             dualized_solve(env, instance, time_limit, verbose);
         } else if (strcmp(method, "branch_and_cut") == 0) {
             branch_and_cut_solve(env, instance, time_limit, verbose);
+        } else if (strcmp(method, "plans_coupants") == 0) {
+            plans_coupants_solve(env, instance, time_limit, verbose);
         } else {
             std::cerr << "Method not recognized: " << method << std::endl;
             std::cerr << "Method should be either 'static' or 'dualized'" << std::endl;

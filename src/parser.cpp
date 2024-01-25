@@ -105,7 +105,9 @@ double Instance::compute_static_score(const std::vector<IloInt>& solution) const
     double static_score = 0.0;
     IloInt current_node = solution[0];
     IloInt next_node = solution[1];
-    assert(current_node == s);
+    if (current_node != s) {
+        throw std::domain_error("First node of solution is not s");
+    }
     for (unsigned int i=1; i<solution.size(); i++) {
         next_node = solution[i];
         for (unsigned int a=0; a<n_arc; a++) {
@@ -116,7 +118,9 @@ double Instance::compute_static_score(const std::vector<IloInt>& solution) const
         }
         current_node = next_node;
     }
-    assert(current_node == t);
+    if (current_node != t) {
+        throw std::domain_error("Last node of solution is not t");
+    }
     return static_score;
 }
 

@@ -3,28 +3,23 @@
 
 ## TODO
 
-- Résolution des sous-problèmes, c'est tellement overkill de résoudre le MILP
-Si l'on trie au début les D et les poids des villes, il suffit de donner le plus gros coefficient aux premières villes/ aux premiers arcs. 
-On va l'appeler en callback, donc c'est important que ce soit rapide. Appeler CPLEX, rien que l'interface, j'imagine que ça prend du temps alors que le problème est hyper simple à résoudre sans l'appeler. 
-
-Pour cela, faire un tri lors de la création de l'instance.
-Par ordre décroissant de D_vec[a] * d_vect[a] pour le score robuste
-Par ordre décroissant de ph pour la contrainte robuste
-
-Ensuite, il suffit de parcourir dans l'ordre les villes/arcs de la solution et remplir autant que possible les incertitudes
-
 - Faire les outils graphiques. Nombre d'instances résolues par rapport au temps de résolution
 - creuser pourquoi CPLEX trouve autant de symmétries dans la résolution dualized
 - coder les plans coupants
-- coder la résolution CallBack
 - réfléchir et implémenter une heuristique
 
-- si la solution n'est pas valide (contrainte robuste), faire renvoyer 1,000,000 en score. Ajouter une colonne "admissibilité"?
+- si la solution n'est pas valide (contrainte robuste), faire renvoyer 1,000,000 en score ? Ajouter une colonne "admissibilité"?
 
 - Est-ce que ça vaut le coup de mettre des >= à la place des = dans les contraintes ? 
 Equivalence pour des x binaires, mais quid du relâché? A tester
 
 - Dans la résolution par dualisation, si l'on ne tourne pas assez longtemps et que l'on n'arrive pas à l'optimal, la solutoin que renvoie l'algorithme n'est pas forcément la même que le vrai score robuste. On garde la solution courante mais on recalcule le vrai score et on fait attention à ce que la solution soit bien admissible. 
+
+- Factoriser le code: classe mère Method
+avec une fonction virtuelle = 0 qui résout le problème qui sera définit dans les classes filles
+Permet de standardiser le renvoi. 
+
+- warm start à l'aide de l'heuristique? Dans dualized et plans coupants, solution réalisable qui permet de couper des branches plus vite et accélerer la résolution
 
 
 ## 04.01
@@ -142,6 +137,7 @@ error run_all dualized:
 
 ## 24.01
 
+Branch and cut: 
 Problème: La résolution du sous problème de l'objectif robuste est + rapide avec CLEX qu'avec la résolution d'un knapsack continu (de 2 ordres de grandeur !!)
 robust objective = 42766.5 time: 0.000247
 robust objective bis = 42766.5, time: 0.010604
@@ -283,4 +279,38 @@ Comment retrieve ces données sans perdre 40s par coupe?
 https://www.ibm.com/docs/en/icos/22.1.1?topic=information-querying-solution-data
 IloNumArray xValues(env);
 getValues(xValues, x);
+
+On passe de 40s à retrieve les données à 0.004 secondes pour une instance à 1000 noeuds
+Si on laisse tourner 300s, on a 130 callBacks qui prennent 0.03s
+Soit environ 5s. Donc le temps que prend notre callBack est négligeable devant celui de CPLEX pour optimiser
+On peut laisser comme ça sans grapiller des secondes qui seront inutiles. 
+
+Branch and cut ok, à lancer sur toutes les instances pour voir les résultats
+
+Go plans sécants maintenant, il n'y a pas une différence énorme par rapport à ce qu'on vient de faire.
+
+- Résolution des sous-problèmes, c'est tellement overkill de résoudre le MILP (RESOLU)
+Si l'on trie au début les D et les poids des villes, il suffit de donner le plus gros coefficient aux premières villes/ aux premiers arcs. 
+On va l'appeler en callback, donc c'est important que ce soit rapide. Appeler CPLEX, rien que l'interface, j'imagine que ça prend du temps alors que le problème est hyper simple à résoudre sans l'appeler. 
+
+Pour cela, faire un tri lors de la création de l'instance.
+Par ordre décroissant de D_vec[a] * d_vect[a] pour le score robuste
+Par ordre décroissant de ph pour la contrainte robuste
+
+Ensuite, il suffit de parcourir dans l'ordre les villes/arcs de la solution et remplir autant que possible les incertitudes
+
+Remarque: plusieurs centaines de milliers d'arcs. Tri en n log n. Une solution courante a max 20 arcs. 
+Donc on peut faire énormément de sous problèmes avant de rentabiliser le tri initial, qu'on ne fait donc pas. 
+
+Plans coupants
+Done mais prend des plombes de tout recommencer à chaque fois qu'on ajoute une contrainte
+Quel est l'avantage de faire ça. Garder toutes les fonctionnalités CPLEX dont on se prive lorsqu'on ajoute des CallBacks ? 
+
+## 25.01
+
+Ca pourrait être utile pour faire des statistiques de savoir **quand a été trouvée la meilleure solution par CPLEX**
+Souvent très rapide et ensuite CPLEX passe son temps à essayer de réduire le gap jusqu'à prouver l'optimalité.
+
+C'est possible de faire cela, mais uniquement avec des CallBack et ça désactive des fonctionnalités de CPLEX. 
+Pas de solution miracle après recherche. Donc on va s'asseoir sur ces stats. 
 
