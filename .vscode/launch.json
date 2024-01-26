@@ -6,7 +6,7 @@
         "type": "cppdbg",
         "request": "launch",
         "program": "${workspaceFolder}/myprogram_debug",
-        "args": ["data/processed/20_USA-road-d.BAY.gr", "heuristics", "0"],
+        "args": ["data/processed/1300_USA-road-d.BAY.gr", "heuristics", "1"],
         // "args": ["data/test/toy.gr", "heuristics", "0"],
         "stopAtEntry": false,
         "cwd": "${workspaceFolder}",

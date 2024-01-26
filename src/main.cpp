@@ -29,21 +29,18 @@ int main(int argc, char **argv) {
 
     try {
         if(strcmp(method, "heuristics") == 0){
-            cout << "into heuristics" << endl;
 
             Heuristic_instance heur(instance);
             heur.inf_dist = heur.backward_dijkstra_distance(instance);
             heur.inf_dist_nodes = heur.backward_dijkstra_nodes(instance);
-            std::vector<int> sol = heur.astar_solve(instance, 0.8, verbose);
-            std::cout << "Solution: ";
-            for (auto it = sol.begin(); it != sol.end(); ++it) {
-                std::cout << *it << " ";
+
+            if(verbose>0){
+                std::cout <<"initialisation heur faite" << std::endl;
             }
-            cout << " " << endl;
-            std::cout << "static objective = " << compute_static_score(instance, sol) << std::endl;
-            std::cout << "robust objective = " << compute_robust_score(instance, sol) << std::endl;
-            std::cout << "static constraint = " << compute_static_constraint(instance, sol) << std::endl;
-            std::cout << "robust constraint  = " << compute_robust_constraint(instance, sol) << " for S = " << instance.S << std::endl;
+            
+            double precision_K = 0.00001;
+            heur.complete_astar_solve(instance, env, precision_K, 2000, 20, verbose);
+            
             return 0;
         }
         else if(strcmp(method, "static") == 0) {

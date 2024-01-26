@@ -134,3 +134,10 @@ error run_all dualized:
 2300_COL: advance basis not built + robust cost and cplex_cost mismatch;
 2400_COL: no solution found;
 
+## 25.01 r
+heuristique fonctionne très rapidement (environ 1s) pour la plupart des instances.
+certains cas pathologique: 1300_BAY arrive pas a trouver une solution réalisable au début avec un dijkstra. a priori pas adapté aux petites instances.
+Pour les cas qui fonctionnent, la "borne_inf" semble bien etre une borne inf, mais aucune certitude -> est ce que on peut le prouver?
+Il faudrait regarder comment injecter la solution de l'heuristique dans un B&B et voir l'impact sur les performances.
+La borne inf en est une si la contrainte robuste est contraignante: si on est laregment bon, on va etre ok pour K=0 et donc c'est pas pertinent
+

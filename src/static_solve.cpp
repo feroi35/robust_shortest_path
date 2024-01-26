@@ -60,7 +60,7 @@ void static_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, co
         throw std::domain_error("No solution found for instance " + inst.name + ". Maybe not enough time");
     }
 
-    assert(inst.solution.empty());
+    assert(inst.sol.empty());
     std::string path_str = "[";
     unsigned int current_node = inst.s-1;
     while (current_node != inst.t-1) {
