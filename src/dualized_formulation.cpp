@@ -72,7 +72,10 @@ void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, 
         throw std::domain_error("No solution found for instance " + inst.name + ". Maybe not enough time");
     }
 
-    assert(inst.sol.empty());
+    if (!inst.sol.empty()) {
+        std::cerr << "Warning: solution vector not empty for instance " << inst.name << std::endl;
+        inst.sol.clear();
+    }
     std::string path_str = "[";
     unsigned int current_node = inst.s-1;
     while (current_node != inst.t-1) {

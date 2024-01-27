@@ -1,19 +1,21 @@
 #include <chrono>
-#include "branch_and_cut.h"
+#include "plans_coupants.h"
 #include "parser.h"
 
 
-ILOLAZYCONSTRAINTCALLBACK5(myCallBack,const IloBoolVarArray&, x,
-        const IloBoolVarArray&, y, const IloNumVar&, z, const Instance&, inst, unsigned int, verbose) {
-    if (verbose > 0) std::cout << "Lazy constraint callback. ";
+bool solve_subproblems(IloEnv env, IloCplex cplex, IloModel model, IloBoolVarArray x, IloBoolVarArray y, IloNumVar z,
+        Instance inst, unsigned int verbose) {
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-
-    IloEnv env = getEnv();
-    ////////////////////////////////
-    // Compute the robust score
+    bool violated = false;
+    // Retrieve the values. Done here because y cant be retrieve after a new constraint has been added
+    // But it is possible to do so in CallBack...
     IloNumArray xValues(env);
-    getValues(xValues, x); // Fait gagner un facteur 10,000 en temps par rapport à getValue
+    cplex.getValues(xValues, x); // Fait gagner un facteur 10,000 en temps par rapport à getValue
+    IloNumArray yValues(env);
+    cplex.getValues(yValues, y); // Fait gagner un facteur 10,000 en temps par rapport à getValue
 
+    ////////////////////////
+    // Compute the robust objective (solving a continuous knapsack)
     std::vector<IloNum> uncertainties; // D
     std::vector<IloNum> weights; // d
     std::vector<IloInt> idx_edges;
@@ -48,16 +50,15 @@ ILOLAZYCONSTRAINTCALLBACK5(myCallBack,const IloBoolVarArray&, x,
     double robust_score = static_score + robust_attack;
 
     // Add the violated constraint
-    if (robust_score > getValue(z) + 1e-3) {
-        add(expr <= z);
+    if (robust_score > cplex.getValue(z) + 1e-3) {
+        model.add(expr <= z);
+        violated = true;
     }
     expr.end();
-    ////////////////////////////////
+    ////////////////////////
 
-    ////////////////////////////////
+    ////////////////////////
     // Compute the robust constraint
-    IloNumArray yValues(env);
-    getValues(yValues, y); // Fait gagner un facteur 10,000 en temps par rapport à getValue
     std::vector<IloNum> weights2; // ph
     std::vector<IloInt> idx_nodes;
     double static_constraint = 0.0;
@@ -78,31 +79,33 @@ ILOLAZYCONSTRAINTCALLBACK5(myCallBack,const IloBoolVarArray&, x,
     int idx2 = n_nodes-1;
     IloExpr expr2(env);
     while (used_budget2 < inst.d2 && idx2 >= 0) {
-        unsigned int node_idx = argsorted_weights2[idx2];
-        float delta2_i = std::min(inst.d2 - used_budget2, weights2[node_idx]);
+        unsigned int node_idx2 = argsorted_weights2[idx2];
+        float delta2_i = std::min(inst.d2 - used_budget2, weights2[node_idx2]);
         used_budget2 += delta2_i;
-        robust_attack2 += delta2_i * weights2[node_idx];
+        robust_attack2 += delta2_i * weights2[node_idx2];
 
-        IloInt real_node = idx_nodes[node_idx];
+        IloInt real_node = idx_nodes[node_idx2];
         expr2 += inst.ph[real_node] * delta2_i * y[real_node];
         idx2--;
     }
     expr2 += IloScalProd(y, inst.p);
     double robust_constraint = static_constraint + robust_attack2;
-
     // Add the violated constraint
     if (robust_constraint > inst.S + 1e-3) {
-        add(expr2 <= inst.S);
+        model.add(expr2 <= inst.S);
+        violated = true;
     }
     expr2.end();
+    ////////////////////////
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    if (verbose > 0) std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
+    if (verbose > 0) std::cout << "Resolution sous problèmes: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
+    return violated;
 }
 
 
-void branch_and_cut_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, const int& verbose) {
+void plans_coupants_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, const int& verbose) {
     IloModel model(env);
 
     // Variables
@@ -152,28 +155,48 @@ void branch_and_cut_solve(IloEnv env, Instance& inst, const unsigned int& time_l
     }
     model.add(y[inst.s-1] == 1);
     model.add(y[inst.t-1] == 1);
-
     model.add(IloScalProd(y, inst.p) <= inst.S);
     model.add(z >= IloScalProd(x, inst.d_vec));
 
-    IloCplex cplex(model);
-    cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
-    cplex.use(myCallBack(env,x,y,z,inst,verbose));
-    if (verbose < 2) cplex.setOut(env.getNullStream());
-
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-    cplex.solve();
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    float time_spent = 0.0;
 
-    if (cplex.getStatus() == IloAlgorithm::Infeasible) {
-        std::cout << inst.name << "," << "branch_and_cut,,,,,,,,," << std::endl;
-        throw std::domain_error("Infeasible branch_and_cut model for instance " + inst.name);
-    } else if (cplex.getStatus() == IloAlgorithm::Unknown) {
-        std::cout << inst.name << "," << "branch_and_cut,,,,,,,,," << std::endl;
-        throw std::domain_error("No solution found for instance " + inst.name + ". Maybe not enough time");
+    IloCplex cplex;
+    bool optimality = false;
+    unsigned int count = 0;
+    while (!optimality) {
+        if (verbose > 0) {
+            std::cout << "Plans coupants: iteration " << std::to_string(count) << std::endl;
+            std::cout << "Time spent: " << time_spent << std::endl; 
+        }
+
+        cplex = IloCplex(model); // Je repars du même modèle à chaque fois auquel j'ajoute des contraintes au fur et à mesure
+        cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
+        if (verbose < 2) cplex.setOut(env.getNullStream());
+        cplex.solve();
+        count++;
+
+        if (cplex.getStatus() == IloAlgorithm::Infeasible) {
+            std::cout << inst.name << "," << "plans_coupants,,,,,,,,," << std::endl;
+            throw std::domain_error("Infeasible plans_coupants model for instance " + inst.name + " at iteration " + std::to_string(count));
+        } else if (cplex.getStatus() == IloAlgorithm::Unknown) {
+            std::cout << inst.name << "," << "plans_coupants,,,,,,,,," << std::endl;
+            throw std::domain_error("No solution found for instance " + inst.name  + " at iteration " + std::to_string(count) + ". Maybe not enough time");
+        }
+
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        time_spent = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()) / 1e6;
+        if (time_spent > time_limit) {
+            // si on ne break pas ici et qu'on ajoute des contraintes, on peut ne peut plus accéder aux valeurs des variables
+            // car on peut avoir un problème infaisable
+            // Remarque: on peut perdre une solution réalisable contre une qui a un meilleur score mais n'est pas réalisable...
+            break;
+        }
+
+        bool violated = false;
+        violated = solve_subproblems(env, cplex, model, x, y, z, inst, verbose);
+        optimality = !violated;
     }
-
     if (!inst.sol.empty()) {
         std::cerr << "Warning: solution vector not empty for instance " << inst.name << std::endl;
         inst.sol.clear();
@@ -196,15 +219,16 @@ void branch_and_cut_solve(IloEnv env, Instance& inst, const unsigned int& time_l
     }
     inst.sol.push_back(inst.t);
     path_str += std::to_string(inst.t) + "]";
-    // Si l'algorithme n'a pas eu assez de temps, c'est possible que la solution n'ait pas le bon score ou ne soit pas faisable
 
+    float robust_constraint = inst.compute_robust_constraint(env);
+    float robust_score = (robust_constraint < inst.S + 1e-3) ? inst.compute_robust_score(env) : 1000000;
     std::cout << inst.name << ","
-        << "branch_and_cut,"
-        << inst.compute_robust_score(env) << ","
+        << "plans_coupants,"
+        << robust_score << ","
         << cplex.getBestObjValue() << ","
-        << static_cast<double>(duration.count()) / 1e6 << ","
+        << time_spent << ","
         << cplex.getNnodes() << ","
-        << inst.compute_robust_constraint(env) << ","
+        << robust_constraint << ","
         << inst.compute_static_score() << ","
         << inst.compute_static_constraint() << ","
         << inst.S << ","
