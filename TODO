@@ -130,6 +130,7 @@ error run_all dualized:
 2400_COL: no solution found;
 
 
+
 ## 24.01
 
 Branch and cut:
@@ -335,3 +336,11 @@ Pourquoi j'ai ce message même lorsque je ne fais pas de warm start? Le code n'e
 
 **MIP emphasis: balance optimality and feasibility**
 Si on considère que l'heuristique est suffisamment bonne. On peut utiliser dualized en se concentrant uniquement sur l'optimality?
+## 25.01 r
+heuristique fonctionne très rapidement (environ 1s) pour la plupart des instances.
+certains cas pathologique: 1300_BAY arrive pas a trouver une solution réalisable au début avec un dijkstra. a priori pas adapté aux petites instances.
+Pour les cas qui fonctionnent, la "borne_inf" semble bien etre une borne inf, mais aucune certitude -> est ce que on peut le prouver?
+Il faudrait regarder comment injecter la solution de l'heuristique dans un B&B et voir l'impact sur les performances.
+La borne inf en est une si la contrainte robuste est contraignante: si on est laregment bon, on va etre ok pour K=0 et donc c'est pas pertinent
+
+

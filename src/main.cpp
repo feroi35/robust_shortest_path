@@ -6,6 +6,8 @@
 #include "branch_and_cut.h"
 #include "plans_coupants.h"
 
+#include <typeinfo> // for debug purpose
+
 
 int main(int argc, char **argv) {
     if (argc < 3) {
@@ -29,8 +31,18 @@ int main(int argc, char **argv) {
 
     try {
         if(strcmp(method, "heuristics") == 0){
-            // std::vector<double>* backward_dist = backward_dijkstra_distance(instance);
-            // std::vector<double>* backward_node = backward_dijkstra_nodes(instance);
+
+            Heuristic_instance heur(instance);
+            heur.inf_dist = heur.backward_dijkstra_distance(instance);
+            heur.inf_dist_nodes = heur.backward_dijkstra_nodes(instance);
+
+            if(verbose>0){
+                std::cout <<"initialisation heur faite" << std::endl;
+            }
+            
+            double precision_K = 0.00001;
+            heur.complete_astar_solve(instance, env, precision_K, 2000, 20, verbose);
+            
             return 0;
         }
         else if(strcmp(method, "static") == 0) {
