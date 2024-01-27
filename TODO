@@ -5,26 +5,21 @@
 
 - Faire les outils graphiques. Nombre d'instances résolues par rapport au temps de résolution
 - creuser pourquoi CPLEX trouve autant de symmétries dans la résolution dualized
-- coder les plans coupants
-- réfléchir et implémenter une heuristique
 
 - si la solution n'est pas valide (contrainte robuste), faire renvoyer 1,000,000 en score ? Ajouter une colonne "admissibilité"?
 
-- Est-ce que ça vaut le coup de mettre des >= à la place des = dans les contraintes ? 
-Equivalence pour des x binaires, mais quid du relâché? A tester
-
-- Dans la résolution par dualisation, si l'on ne tourne pas assez longtemps et que l'on n'arrive pas à l'optimal, la solutoin que renvoie l'algorithme n'est pas forcément la même que le vrai score robuste. On garde la solution courante mais on recalcule le vrai score et on fait attention à ce que la solution soit bien admissible. 
+- Dans la résolution par dualisation, si l'on ne tourne pas assez longtemps et que l'on n'arrive pas à l'optimal, la solutoin que renvoie l'algorithme n'est pas forcément la même que le vrai score robuste. On garde la solution courante mais on recalcule le vrai score et on fait attention à ce que la solution soit bien admissible.
 
 - Factoriser le code: classe mère Method
 avec une fonction virtuelle = 0 qui résout le problème qui sera définit dans les classes filles
-Permet de standardiser le renvoi. 
+Permet de standardiser le renvoi.
 
 - warm start à l'aide de l'heuristique? Dans dualized et plans coupants, solution réalisable qui permet de couper des branches plus vite et accélerer la résolution
 
 
 ## 04.01
 
-Certaines instances crashent lors de la résolution statique: 
+Certaines instances crashent lors de la résolution statique:
 
 Quelques examples:
 
@@ -46,7 +41,7 @@ Fixer une limite max de temps, 1 minute ?
 ## 17.01
 
 Sur certaines grosses instances: linux kills le programme avec la méthode dualisée
-Pas de message d'erreur, simplement : 
+Pas de message d'erreur, simplement :
 ./run.sh: line 20:  2414 Killed                  ./myprogram "$file" "$method" "$verbose"
 
 Mais si on creuse en affichant **dmesg**, on obtient:
@@ -73,26 +68,26 @@ Warning, line 1755417: Name 'x_0_0#235978' does not exist.
 J'imagine que ce warning apparait pour toutes les variables qui sont "créées" mais jamais utilisées dans les contraintes ou l'objectif
 c'est à dire, les variables qui représentent des arcs qui n'existent pas.
 
-Dans mon fichier .wslconfig, 
+Dans mon fichier .wslconfig,
 j'avais memory = 4Gb
 Quand j'enlève cette ligne, Cplex arrive à presolve le problème, ce qu'il ne faisait pas avant. Mais crash après trouver sa première solution
 
 Out of memory: Killed process 1443 (myprogram) total-vm:3981856kB, anon-rss:3086536kB, file-rss:4kB, shmem-rss:0kB, UID:1000 pgtables:7136kB oom_score_adj:0
 
-Essayons d'abord de modifier le problème pour que moins de mémoire soit prise. 
+Essayons d'abord de modifier le problème pour que moins de mémoire soit prise.
 Pas besoin de stocker un vecteur de vecteurs entier remplis à moitié de NaN, il faut faire ça de manière intelligente.
 
 - 1. Stocker un vecteur de vecteurs de vecteurs d'arc entrants et un vecteur de vecteurs d'arcs sortants. On stocke ainsi uniquement ce dont on a besoin.
-- 2. (à tester) Virer env de la création de l'instance. C'est absurde comme manière de faire. De +, ça peut poser des problèmes lors de la résolution de sous-problèmes lors de l'algo des plans coupants. 
+- 2. (à tester) Virer env de la création de l'instance. C'est absurde comme manière de faire. De +, ça peut poser des problèmes lors de la résolution de sous-problèmes lors de l'algo des plans coupants.
 
 ## 19.01
 
 Résolution des sous-problèmes, c'est tellement overkill de résoudre le MILP
-Si l'on trie au début les D et les poids des villes, il suffit de donner le plus gros coefficient aux premières villes/ aux premiers arcs. 
+Si l'on trie au début les D et les poids des villes, il suffit de donner le plus gros coefficient aux premières villes/ aux premiers arcs.
 
  data/processed/100_USA-road-d.COL.gr
- La contrainte robuste est plus faible que la contrainte statique (poids des villes additionné), pas possible. 
- A débugger. 
+ La contrainte robuste est plus faible que la contrainte statique (poids des villes additionné), pas possible.
+ A débugger.
 Faire attention aux décalages de 1. Indexation des instances commence à 1. Problème réglé.
 
 
@@ -105,11 +100,11 @@ Advanced basis not built.
 Running file: data/processed/2300_USA-road-d.COL.gr, 62 / 123
 Advanced basis not built.
 Concert exception caught: CPLEX Error  1217: No solution exists.
--> Simplement pas assez de temps donné, elle est énervée cette instance. Mais gestion des erreurs revues pour ne pas avoir d'incohérences comme cella là. 
+-> Simplement pas assez de temps donné, elle est énervée cette instance. Mais gestion des erreurs revues pour ne pas avoir d'incohérences comme cella là.
 
 ## 21.01
 
-Dans la version dualized avec les arcs, 
+Dans la version dualized avec les arcs,
 lambda était un BoolVarArray au lieu d'être un NumVarArray
 -> corrigé
 
@@ -129,7 +124,7 @@ Que signifie "Advanced basis not built" ?
 
 ## 23.01 r
 error run_all dualized:
-1800_COL, 2200_COL, 2200_NY, 2500_COL: mismatch robust_cost cplex_cost ; 
+1800_COL, 2200_COL, 2200_NY, 2500_COL: mismatch robust_cost cplex_cost ;
 2100_NY: using missing arc;
 2300_COL: advance basis not built + robust cost and cplex_cost mismatch;
 2400_COL: no solution found;
@@ -137,25 +132,25 @@ error run_all dualized:
 
 ## 24.01
 
-Branch and cut: 
+Branch and cut:
 Problème: La résolution du sous problème de l'objectif robuste est + rapide avec CLEX qu'avec la résolution d'un knapsack continu (de 2 ordres de grandeur !!)
 robust objective = 42766.5 time: 0.000247
 robust objective bis = 42766.5, time: 0.010604
 
-Le tri doit être lent? 
+Le tri doit être lent?
 Non, time sort = 1.3e-05, négligeable
 
-C'est bon, le temps de calcul avec CPLEX ne prenait en compte que la résolution alors que la construction du problème prend aussi beaucoup de temps. 
-On a bien que la résolution gloutonne de notre knapsack continu est plus rapide. 
+C'est bon, le temps de calcul avec CPLEX ne prenait en compte que la résolution alors que la construction du problème prend aussi beaucoup de temps.
+On a bien que la résolution gloutonne de notre knapsack continu est plus rapide.
 
 robust objective = 42766.5, time: 0.011856
 robust objective bis = 42766.5, time: 0.00619
 
-On perd beaucoup de temps à retrouver les arcs à partir de la solution. C'est la contrepartie de ne pas stocker toute la matrice de distance, ce qui faisait crasher WSL à cause de la mémoire. 
+On perd beaucoup de temps à retrouver les arcs à partir de la solution. C'est la contrepartie de ne pas stocker toute la matrice de distance, ce qui faisait crasher WSL à cause de la mémoire.
 
-Mais on ne repart jamais de là quand on ajoute des coupes car on a directement les indexes des arcs utilisés. 
-J'ai des coupes qui se passent bien. 
-Puis à un moment, j'ai cette erreur 
+Mais on ne repart jamais de là quand on ajoute des coupes car on a directement les indexes des arcs utilisés.
+J'ai des coupes qui se passent bien.
+Puis à un moment, j'ai cette erreur
 
 free(): invalid next size (fast)
 
@@ -245,7 +240,7 @@ ILOLAZYCONSTRAINTCALLBACK4(myCallBack,IloBoolVarArray, x,
 }
 
 Pour l'instance 20_USA-road-d.BAY.gr
-A un moment, on trouve que getValue(IloSum(x)) = 3 ie on utilise 3 arcs. 
+A un moment, on trouve que getValue(IloSum(x)) = 3 ie on utilise 3 arcs.
 Sauf que si l'on regarde tous les arcs utilisés ensuite, il y en a 4
 CPLEX fait n'importe quoi
 
@@ -261,19 +256,19 @@ IloInt b = getValue(IloSum(x));
 float c = getValue(IloSum(x));
 c = 4
 
-C'est n'importe quoi. Je ne peux pas fixer la taille des vecteurs avant alors que ça fait gagner du temps parce que IloSum plante. 
+C'est n'importe quoi. Je ne peux pas fixer la taille des vecteurs avant alors que ça fait gagner du temps parce que IloSum plante.
 Donc je vais faire des pushBack même si c'est moche, au moins ça marche
 
 
-Ca marche, ça plie l'instance de taille 20. 
+Ca marche, ça plie l'instance de taille 20.
 Mais ça prend 1 minute pour l'instance de taille 1000
 
 Après profiling, toute la lenteur vient de cette boucle
-std::vector<> xValues; 
+std::vector<> xValues;
 for (unsigned int a = 0; a < inst.n_arc; a++) {
     xValues[a] = getValue(x[a]);
 }
-Cela prend tout le temps du callBack. 
+Cela prend tout le temps du callBack.
 Comment retrieve ces données sans perdre 40s par coupe?
 
 https://www.ibm.com/docs/en/icos/22.1.1?topic=information-querying-solution-data
@@ -283,15 +278,15 @@ getValues(xValues, x);
 On passe de 40s à retrieve les données à 0.004 secondes pour une instance à 1000 noeuds
 Si on laisse tourner 300s, on a 130 callBacks qui prennent 0.03s
 Soit environ 5s. Donc le temps que prend notre callBack est négligeable devant celui de CPLEX pour optimiser
-On peut laisser comme ça sans grapiller des secondes qui seront inutiles. 
+On peut laisser comme ça sans grapiller des secondes qui seront inutiles.
 
 Branch and cut ok, à lancer sur toutes les instances pour voir les résultats
 
 Go plans sécants maintenant, il n'y a pas une différence énorme par rapport à ce qu'on vient de faire.
 
 - Résolution des sous-problèmes, c'est tellement overkill de résoudre le MILP (RESOLU)
-Si l'on trie au début les D et les poids des villes, il suffit de donner le plus gros coefficient aux premières villes/ aux premiers arcs. 
-On va l'appeler en callback, donc c'est important que ce soit rapide. Appeler CPLEX, rien que l'interface, j'imagine que ça prend du temps alors que le problème est hyper simple à résoudre sans l'appeler. 
+Si l'on trie au début les D et les poids des villes, il suffit de donner le plus gros coefficient aux premières villes/ aux premiers arcs.
+On va l'appeler en callback, donc c'est important que ce soit rapide. Appeler CPLEX, rien que l'interface, j'imagine que ça prend du temps alors que le problème est hyper simple à résoudre sans l'appeler.
 
 Pour cela, faire un tri lors de la création de l'instance.
 Par ordre décroissant de D_vec[a] * d_vect[a] pour le score robuste
@@ -299,18 +294,44 @@ Par ordre décroissant de ph pour la contrainte robuste
 
 Ensuite, il suffit de parcourir dans l'ordre les villes/arcs de la solution et remplir autant que possible les incertitudes
 
-Remarque: plusieurs centaines de milliers d'arcs. Tri en n log n. Une solution courante a max 20 arcs. 
-Donc on peut faire énormément de sous problèmes avant de rentabiliser le tri initial, qu'on ne fait donc pas. 
+Remarque: plusieurs centaines de milliers d'arcs. Tri en n log n. Une solution courante a max 20 arcs.
+Donc on peut faire énormément de sous problèmes avant de rentabiliser le tri initial, qu'on ne fait donc pas.
 
 Plans coupants
 Done mais prend des plombes de tout recommencer à chaque fois qu'on ajoute une contrainte
-Quel est l'avantage de faire ça. Garder toutes les fonctionnalités CPLEX dont on se prive lorsqu'on ajoute des CallBacks ? 
+Quel est l'avantage de faire ça. Garder toutes les fonctionnalités CPLEX dont on se prive lorsqu'on ajoute des CallBacks ?
 
 ## 25.01
 
 Ca pourrait être utile pour faire des statistiques de savoir **quand a été trouvée la meilleure solution par CPLEX**
 Souvent très rapide et ensuite CPLEX passe son temps à essayer de réduire le gap jusqu'à prouver l'optimalité.
 
-C'est possible de faire cela, mais uniquement avec des CallBack et ça désactive des fonctionnalités de CPLEX. 
-Pas de solution miracle après recherche. Donc on va s'asseoir sur ces stats. 
+C'est possible de faire cela, mais uniquement avec des CallBack et ça désactive des fonctionnalités de CPLEX.
+Pas de solution miracle après recherche. Donc on va s'asseoir sur ces stats.
 
+Plans coupants.
+1ere itération: solution statique, admissible mais pas le bon score. On ajoute la coupe
+2e iteration: solution admissible mais pas le bon score.
+3e iteration: on obtient une solution qui n'est pas admissible. Fin du temps. L'algorithme renvoit la dernière solution pas admissible
+Alors qu'on avait obtenu une solution admissible avant, mais on l'a rejeté car elle ne mettait pas le bon score (robuste)
+
+-> garder manuellement la meilleure solution admissible. Done.
+
+
+WARM START
+
+https://www.ibm.com/docs/en/icos/22.1.1?topic=mip-starting-from-solution-starts
+After a MIP start has been established for your model, you control its use by the advanced start switch (AdvInd in Concert Technology; CPX_PARAM_ADVIND in the Callable Library). At the default setting of 1 (one) , the MIP start values that you specify are used. If you set AdvInd to the value 0 (zero), then the MIP start will not be used. If you set this parameter to 2, CPLEX retains the current incumbent (if there is one), re-applies presolve, and starts a new search from a new root. **Setting 2 can be particularly useful for solving fixed MIP models, where a start vector exists but no corresponding basis is available**. For more about a fixed MIP, see Working with the fixed MIP problem
+
+Il est aussi possible de donner plusieurs valeurs de WarmStart à CPLEX. Pas dans un premier temps.
+
+```
+Warning:  No solution found from 1 MIP starts.
+Retaining values of one MIP start for possible repair.
+```
+
+Pourquoi j'ai ce message même lorsque je ne fais pas de warm start? Le code n'est pas appelé
+
+
+**MIP emphasis: balance optimality and feasibility**
+Si on considère que l'heuristique est suffisamment bonne. On peut utiliser dualized en se concentrant uniquement sur l'optimality?

@@ -9,17 +9,19 @@
 
 int main(int argc, char **argv) {
     if (argc < 3) {
-        std::cerr << "Usage: " << argv[0] << " <filename>" << "method" << "(verbose)" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <filename>" << "method" << "(time_limit)" << "(verbose)" << std::endl;
         exit(1);
     }
     char* filename = argv[1];
     char* method = argv[2];
-    int verbose = 0;
-    if (argc > 3) {
-        verbose = atoi(argv[3]);
-    }
     unsigned int time_limit = 60;
-
+    if (argc > 3) {
+        time_limit = atoi(argv[3]);
+    }
+    int verbose = 0;
+    if (argc > 4) {
+        verbose = atoi(argv[4]);
+    }
 
     IloEnv env;
     Instance instance(env, filename);
@@ -41,7 +43,6 @@ int main(int argc, char **argv) {
             plans_coupants_solve(env, instance, time_limit, verbose);
         } else {
             std::cerr << "Method not recognized: " << method << std::endl;
-            std::cerr << "Method should be either 'static' or 'dualized'" << std::endl;
             exit(1);
         }
         if (verbose > 0) {

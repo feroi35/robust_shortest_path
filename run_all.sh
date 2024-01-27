@@ -1,4 +1,5 @@
 method="dualized"
+time_limit=600
 verbose=0
 
 GLOBAL_CSV="results/${method}_results_bis.csv"
@@ -16,7 +17,7 @@ count=1
 for file in "$repo_instances"/*.gr
 do
     echo "Running file: $file, $count/123"
-    ./myprogram "$file" "$method" "$verbose" >> "$GLOBAL_CSV"
+    ./myprogram "$file" "$method" "$time_limit" "$verbose" >> "$GLOBAL_CSV"
     ((count++))
     # if [ "$count" -lt 5 ]; then
     #     echo "Running file: $file, $count/123"

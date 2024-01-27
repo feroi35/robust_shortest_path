@@ -3,19 +3,11 @@
 #include "parser.h"
 
 
-bool solve_subproblems(IloEnv env, IloCplex cplex, IloModel model, IloBoolVarArray x, IloBoolVarArray y, IloNumVar z,
-        Instance inst, unsigned int verbose) {
-    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-    bool violated = false;
-    // Retrieve the values. Done here because y cant be retrieve after a new constraint has been added
-    // But it is possible to do so in CallBack...
-    IloNumArray xValues(env);
-    cplex.getValues(xValues, x); // Fait gagner un facteur 10,000 en temps par rapport à getValue
-    IloNumArray yValues(env);
-    cplex.getValues(yValues, y); // Fait gagner un facteur 10,000 en temps par rapport à getValue
-
-    ////////////////////////
+double solve_objective_subproblem(IloEnv env, IloCplex cplex, IloModel model, const IloNumArray& xValues,
+        const IloBoolVarArray& x, const IloNumVar& z, const double current_best_value, const Instance& inst) {
     // Compute the robust objective (solving a continuous knapsack)
+    // And add the violated constraint (if any)
+    // It is done in the same function because it allows to be more efficient
     std::vector<IloNum> uncertainties; // D
     std::vector<IloNum> weights; // d
     std::vector<IloInt> idx_edges;
@@ -50,64 +42,64 @@ bool solve_subproblems(IloEnv env, IloCplex cplex, IloModel model, IloBoolVarArr
     double robust_score = static_score + robust_attack;
 
     // Add the violated constraint
-    if (robust_score > cplex.getValue(z) + 1e-3) {
+    if (robust_score > current_best_value + 1e-3) {
         model.add(expr <= z);
-        violated = true;
     }
     expr.end();
-    ////////////////////////
+    return robust_score;
+}
 
-    ////////////////////////
-    // Compute the robust constraint
-    std::vector<IloNum> weights2; // ph
+
+double solve_constraint_subproblem(IloEnv env, IloCplex cplex, IloModel model, const IloNumArray& yValues,
+        const IloBoolVarArray& y, const Instance& inst) {
+    // Compute the robust constraint (solving a continuous knapsack)
+    // and add the violated constraint (if any)
+    // It is done in the same function because it allows to be more efficient
+    std::vector<IloNum> weight; // ph
     std::vector<IloInt> idx_nodes;
     double static_constraint = 0.0;
     unsigned int n_nodes = 0;
 
     for (unsigned int i=0; i<inst.n; i++) {
         if (yValues[i] > 1e-3) {
-            weights2.push_back(inst.ph[i]);
+            weight.push_back(inst.ph[i]);
             idx_nodes.push_back(i);
             static_constraint += inst.p[i];
             n_nodes++;
         }
     }
 
-    std::vector<size_t> argsorted_weights2 = argsort(weights2);
+    std::vector<size_t> argsorted_weight = argsort(weight);
     double robust_attack2 = 0.0;
     double used_budget2 = 0.0;
     int idx2 = n_nodes-1;
-    IloExpr expr2(env);
+    IloExpr expr(env);
     while (used_budget2 < inst.d2 && idx2 >= 0) {
-        unsigned int node_idx2 = argsorted_weights2[idx2];
-        float delta2_i = std::min(inst.d2 - used_budget2, weights2[node_idx2]);
+        unsigned int node_idx2 = argsorted_weight[idx2];
+        float delta2_i = std::min(inst.d2 - used_budget2, weight[node_idx2]);
         used_budget2 += delta2_i;
-        robust_attack2 += delta2_i * weights2[node_idx2];
+        robust_attack2 += delta2_i * weight[node_idx2];
 
         IloInt real_node = idx_nodes[node_idx2];
-        expr2 += inst.ph[real_node] * delta2_i * y[real_node];
+        expr += inst.ph[real_node] * delta2_i * y[real_node];
         idx2--;
     }
-    expr2 += IloScalProd(y, inst.p);
+    expr += IloScalProd(y, inst.p);
     double robust_constraint = static_constraint + robust_attack2;
     // Add the violated constraint
     if (robust_constraint > inst.S + 1e-3) {
-        model.add(expr2 <= inst.S);
-        violated = true;
+        model.add(expr <= inst.S);
     }
-    expr2.end();
-    ////////////////////////
-
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    if (verbose > 0) std::cout << "Resolution sous problèmes: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
-    return violated;
+    expr.end();
+    return robust_constraint;
 }
 
 
 void plans_coupants_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, const int& verbose) {
     IloModel model(env);
 
+    ///////////////////////////
+    // Static model
     // Variables
     IloBoolVarArray x(env, inst.n_arc);
     IloBoolVarArray y(env, inst.n);
@@ -157,45 +149,98 @@ void plans_coupants_solve(IloEnv env, Instance& inst, const unsigned int& time_l
     model.add(y[inst.t-1] == 1);
     model.add(IloScalProd(y, inst.p) <= inst.S);
     model.add(z >= IloScalProd(x, inst.d_vec));
+    ///////////////////////////
+
+    ///////////////////////////
+    // Stock the current best solution
+    // Indeed, if at some point, an admissible solution is found but its score does not match, it will be excluded
+    // And the final solution could be not admissible (because of the time limit)
+    IloNumArray best_xValues(env);
+    IloNumArray best_yValues(env);
+    double best_score = 1e6;
+    double best_bound = 0.0;
+    ///////////////////////////
+    IloNumArray xValues(env); // to retrieve the values
+    IloNumArray yValues(env);
 
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     float time_spent = 0.0;
 
     IloCplex cplex;
+    cplex = IloCplex(model); // Je repars du même modèle à chaque fois auquel j'ajoute des contraintes au fur et à mesure
+    cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
+
     bool optimality = false;
-    unsigned int count = 0;
-    while (!optimality) {
+    bool new_best_sol_found = false;
+    unsigned int iteration = 0;
+    while (!optimality && time_spent < time_limit) {
         if (verbose > 0) {
-            std::cout << "Plans coupants: iteration " << std::to_string(count) << std::endl;
-            std::cout << "Time spent: " << time_spent << std::endl; 
+            std::cout << "Plans coupants: iteration " << iteration << std::endl;
+            std::cout << "Time spent: " << time_spent << std::endl;
         }
 
-        cplex = IloCplex(model); // Je repars du même modèle à chaque fois auquel j'ajoute des contraintes au fur et à mesure
-        cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
+        // Warm start
+        if (new_best_sol_found) {
+            if (verbose > 0) std::cout << "Warm start" << std::endl;
+            IloNumVarArray startVarX(env);
+            for (unsigned int a = 0; a < inst.n_arc; ++a) {
+                startVarX.add(x[a]);
+            }
+            cplex.addMIPStart(startVarX, best_xValues);
+            startVarX.end();
+
+            IloNumVarArray startVarY(env);
+            for (unsigned int i = 0; i < inst.n; ++i) {
+                startVarY.add(y[i]);
+            }
+            cplex.addMIPStart(startVarY, best_yValues);
+            startVarY.end();
+
+            IloNumVarArray startVarZ(env);
+            IloNumArray zArray(env, 1, best_score);
+            startVarZ.add(z);
+            zArray[0] = best_score;
+            cplex.addMIPStart(startVarZ, zArray);
+            startVarZ.end();
+            zArray.end();
+        }
+        new_best_sol_found = false;
         if (verbose < 2) cplex.setOut(env.getNullStream());
         cplex.solve();
-        count++;
 
         if (cplex.getStatus() == IloAlgorithm::Infeasible) {
             std::cout << inst.name << "," << "plans_coupants,,,,,,,,," << std::endl;
-            throw std::domain_error("Infeasible plans_coupants model for instance " + inst.name + " at iteration " + std::to_string(count));
+            throw std::domain_error("Infeasible plans_coupants model for instance " + inst.name + " at iteration " + std::to_string(iteration));
         } else if (cplex.getStatus() == IloAlgorithm::Unknown) {
             std::cout << inst.name << "," << "plans_coupants,,,,,,,,," << std::endl;
-            throw std::domain_error("No solution found for instance " + inst.name  + " at iteration " + std::to_string(count) + ". Maybe not enough time");
+            throw std::domain_error("No solution found for instance " + inst.name  + " at iteration " + std::to_string(iteration) + ". Maybe not enough time");
         }
 
-        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        time_spent = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()) / 1e6;
-        if (time_spent > time_limit) {
-            // si on ne break pas ici et qu'on ajoute des contraintes, on peut ne peut plus accéder aux valeurs des variables
-            // car on peut avoir un problème infaisable
-            // Remarque: on peut perdre une solution réalisable contre une qui a un meilleur score mais n'est pas réalisable...
-            break;
+        // Retrieve the values. Done here because y cant be retrieve after a new constraint has been added
+        cplex.getValues(xValues, x); // cplex.getValues does not work for IloBoolArray...
+        cplex.getValues(yValues, y);
+        double current_best_value = cplex.getObjValue();
+        double current_best_bound = cplex.getBestObjValue();
+        if (best_bound < current_best_bound) {
+            best_bound = current_best_bound;
+            model.add(z >= best_bound); // Add the bound
         }
 
-        bool violated = false;
-        violated = solve_subproblems(env, cplex, model, x, y, z, inst, verbose);
+        double robust_objective = solve_objective_subproblem(env, cplex, model, xValues, x, z, current_best_value, inst);
+        double robust_constraint = solve_constraint_subproblem(env, cplex, model, yValues, y, inst);
+        bool violated_objective = robust_objective > current_best_value + 1e-3;
+        bool violated_constraint = robust_constraint > inst.S + 1e-3;
+
+        if (!violated_constraint && robust_objective < best_score) {
+            best_score = robust_objective;
+            best_xValues = xValues;
+            best_yValues = yValues;
+            new_best_sol_found = true;
+        }
+        bool violated = violated_objective || violated_constraint;
         optimality = !violated;
+        iteration++;
+        time_spent = static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count()) / 1e6;
     }
     if (!inst.sol.empty()) {
         std::cerr << "Warning: solution vector not empty for instance " << inst.name << std::endl;
@@ -207,7 +252,8 @@ void plans_coupants_solve(IloEnv env, Instance& inst, const unsigned int& time_l
         path_str += std::to_string(current_node+1) + ";";
         inst.sol.push_back(current_node+1);
         for (unsigned int a=0; a<inst.n_arc; a++) {
-            if (inst.mat[a].tail == current_node+1 && cplex.getValue(x[a]) == 1) {
+            if (inst.mat[a].tail == current_node+1 && best_xValues[a] == 1) {
+                // Différence par rapport aux autres méthodes, best_xValues au lieu de model.getValue(x[a])
                 current_node = inst.mat[a].head-1;
                 break;
             }
@@ -221,11 +267,11 @@ void plans_coupants_solve(IloEnv env, Instance& inst, const unsigned int& time_l
     path_str += std::to_string(inst.t) + "]";
 
     float robust_constraint = inst.compute_robust_constraint(env);
-    float robust_score = (robust_constraint < inst.S + 1e-3) ? inst.compute_robust_score(env) : 1000000;
+    float robust_score = (robust_constraint < inst.S + 1e-3) ? inst.compute_robust_score(env) : 1e6;
     std::cout << inst.name << ","
         << "plans_coupants,"
         << robust_score << ","
-        << cplex.getBestObjValue() << ","
+        << best_bound << ","
         << time_spent << ","
         << cplex.getNnodes() << ","
         << robust_constraint << ","
