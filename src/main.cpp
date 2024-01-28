@@ -39,10 +39,10 @@ int main(int argc, char **argv) {
             if(verbose>0){
                 std::cout <<"initialisation heur faite" << std::endl;
             }
-            
+
             double precision_K = 0.00001;
             heur.complete_astar_solve(instance, env, precision_K, 2000, 20, verbose);
-            
+
             return 0;
         }
         else if(strcmp(method, "static") == 0) {

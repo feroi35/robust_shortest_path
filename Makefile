@@ -6,8 +6,7 @@ CONCERTDIR    = $(CPLEX)/concert/
 # ---------------------------------------------------------------------
 # Compiler selection, code optimization, debug, and warning options
 # ---------------------------------------------------------------------
-CCFLAGS = -O3 -m64 -Wall -Wno-ignored-attributes -g #-DNDEBUG
-# use DNDEBUG to remove asserts and turn off some clog debug messages
+CCFLAGS = -O3 -m64 -Wall -Wno-ignored-attributes -g
 
 # Debug build flags
 DEBUGFLAGS = -g -O0
@@ -37,23 +36,25 @@ SRCDIR = src
 INCDIR = include
 SRCS = $(wildcard $(SRCDIR)/*.cpp)
 OBJS = $(SRCS:$(SRCDIR)/%.cpp=$(SRCDIR)/%.o)
+OBJS_DEBUG = $(OBJS:$(SRCDIR)/%.o=$(SRCDIR)/%_debug.o)
 TARGET = myprogram
 
 # Release build rule for object files
+# use DNDEBUG to remove asserts and turn off some clog debug messages
 $(SRCDIR)/%.o: $(SRCDIR)/%.cpp $(INCDIR)/%.h
-	$(CXX) $(CCFLAGSCPLEX) -c $< -o $@
+	$(CXX) $(CCFLAGSCPLEX) -DNDEBUG -c $< -o $@
 
 # Debug build rule for object files
-$(SRCDIR)/%.o: $(SRCDIR)/%.cpp $(INCDIR)/%.h
+$(SRCDIR)/%_debug.o: $(SRCDIR)/%.cpp $(INCDIR)/%.h
 	$(CXX) $(CCFLAGSCPLEX) $(DEBUGFLAGS) -c $< -o $@
 
 # Debug build
-debug: $(OBJS)
-	$(CXX) $(CCFLAGSCPLEX) $(DEBUGFLAGS) -o $(TARGET)_debug $(OBJS) $(CCLNFLAGSCPLEX)
+debug: $(OBJS_DEBUG)
+	$(CXX) $(CCFLAGSCPLEX) $(DEBUGFLAGS) -o $(TARGET)_debug $(OBJS_DEBUG) $(CCLNFLAGSCPLEX)
 
 # Release build
 release: $(OBJS)
-	$(CXX) $(CCFLAGSCPLEX) -o $(TARGET) $(OBJS) $(CCLNFLAGSCPLEX)
+	$(CXX) $(CCFLAGSCPLEX) -DNDEBUG -o $(TARGET) $(OBJS) $(CCLNFLAGSCPLEX)
 
 clean: cleanobj
 	rm -f $(OBJS) $(TARGET) $(TARGET)_debug
