@@ -95,7 +95,7 @@ void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, 
     inst.sol.push_back(inst.t);
     path_str += std::to_string(inst.t) + "]";
 
-    double robust_cost = inst.compute_robust_score(env);
+    double robust_cost = inst.compute_robust_score_milp(env);
     if (abs(robust_cost - cplex.getObjValue()) > 1e-3) {
         std::cout << inst.name << "," << "dualized,,,,,,,,," << std::endl;
         throw std::domain_error("Robust cost and CPLEX cost do not match for instance " + inst.name);
@@ -107,7 +107,7 @@ void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, 
         << cplex.getBestObjValue() << ","
         << static_cast<double>(duration.count()) / 1e6 << ","
         << cplex.getNnodes() << ","
-        << inst.compute_robust_constraint(env) << ","
+        << inst.compute_robust_constraint_milp(env) << ","
         << inst.compute_static_score() << ","
         << inst.compute_static_constraint() << ","
         << inst.S << ","

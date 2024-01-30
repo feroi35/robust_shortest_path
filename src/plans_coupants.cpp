@@ -266,8 +266,8 @@ void plans_coupants_solve(IloEnv env, Instance& inst, const unsigned int& time_l
     inst.sol.push_back(inst.t);
     path_str += std::to_string(inst.t) + "]";
 
-    float robust_constraint = inst.compute_robust_constraint(env);
-    float robust_score = (robust_constraint < inst.S + 1e-3) ? inst.compute_robust_score(env) : 1e6;
+    float robust_constraint = inst.compute_robust_constraint_milp(env);
+    float robust_score = (robust_constraint < inst.S + 1e-3) ? inst.compute_robust_score_milp(env) : 1e9;
     std::cout << inst.name << ","
         << "plans_coupants,"
         << robust_score << ","

@@ -3,11 +3,11 @@ file="data/processed/1200_USA-road-d.COL.gr"
 
 method="static"
 time_limit=600
-verbose=2
+verbose=1
 
 make release
 
-echo "Running file: $file"
+echo "Running file: $./runfile"
 ./myprogram "$file" "$method" "$time_limit" "$verbose"
 
 # make clean

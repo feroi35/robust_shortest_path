@@ -11,20 +11,17 @@ ILOSTLBEGIN // macro to avoid incompatibility. Important to be before the other 
 #include <algorithm>    // std::sort, std::stable_sort
 
 
+const double undefinedValue = std::numeric_limits<double>::quiet_NaN();
+
 template <typename T> std::vector<size_t> argsort(const vector<T> &v) {
     // https://stackoverflow.com/questions/1577475/c-sorting-and-keeping-track-of-indexes
     // somehow, argsort is not defined in the std library
-    // I don't remember why, but the template seems to need to be defined in the header file
-    // hence, the include in the header file
-    vector<size_t> idx(v.size());
-    iota(idx.begin(), idx.end(), 0);
+    std::vector<size_t> idx(v.size());
+    std::iota(idx.begin(), idx.end(), 0);
     std::stable_sort(idx.begin(), idx.end(), [&v](size_t i1, size_t i2) {return v[i1] < v[i2];});
     return idx;
 }
-// #include <tuple>
-// #include <map>
 
-const double undefinedValue = std::numeric_limits<double>::quiet_NaN();
 
 struct Arc {
     IloInt head;
@@ -32,19 +29,6 @@ struct Arc {
     IloNum d;
     IloNum D;
 };
-
-
-// class Index{
-//     public:
-//         int i;
-//         int j;
-//         Index(int i, int j): i(i), j(j) {};
-//         bool operator<(const Index& other) const {
-//             return (i < other.i) || (i == other.i && j < other.j);
-//         }
-// };
-
-
 
 struct Instance {
     std::string name;
@@ -61,9 +45,6 @@ struct Instance {
     IloNumArray D_vec; // incertitude durée de trajet des arcs
     std::vector<Arc> mat;
 
-    // Prend la dose de mémoire en dessous
-    // std::map<Index,double> d; // matrice des durées de trajet
-    // std::map<Index,double> D; // matrice des incertitudes des durées de trajet
     std::vector<std::vector<float>> d; // matrice des durées de trajet
     std::vector<std::vector<float>> D; // matrice des incertitudes des durées de trajet
     std::vector<std::vector<int>> neighbors_list;
@@ -73,22 +54,24 @@ struct Instance {
 
     Instance(){};
     Instance(IloEnv env, char filename[]);
-    ~Instance(){}; //delete neighbors_list; delete reverse_neighbors_list;
+    ~Instance(){};
     Instance(const Instance& instan);
 
     void display() const;
 
-    double compute_static_score() const { return compute_static_score(sol); }
-    double compute_robust_score(IloEnv env, const unsigned int& time_limit=60, const int& verbose=0) const { return compute_robust_score(env, sol, time_limit, verbose); }
-    double compute_robust_score_bis(const unsigned int& time_limit=60, const int& verbose=0) const { return compute_robust_score_bis(sol, time_limit, verbose); }
-    double compute_static_constraint() const { return compute_static_constraint(sol); }
-    double compute_robust_constraint(IloEnv env, const unsigned int& time_limit=60, const int& verbose=0) const { return compute_robust_constraint(env, sol, time_limit, verbose); }
+    double compute_static_score() const {return compute_static_score(sol);}
+    double compute_robust_score_milp(IloEnv env, const unsigned int& time_limit=60, const unsigned int& verbose=0) const {return compute_robust_score_milp(env, sol, time_limit, verbose);}
+    double compute_robust_score_knapsack(const unsigned int& verbose=0) const {return compute_robust_score_knapsack(sol, verbose);}
+    double compute_static_constraint() const {return compute_static_constraint(sol);}
+    double compute_robust_constraint_milp(IloEnv env, const unsigned int& time_limit=60, const unsigned int& verbose=0) const {return compute_robust_constraint_milp(env, sol, time_limit, verbose);}
+    double compute_robust_constraint_knapsack(const unsigned int& verbose=0) const {return compute_robust_constraint_knapsack(sol, verbose);}
 
     double compute_static_score(const std::vector<IloInt>& solution) const;
-    double compute_robust_score(IloEnv env, const std::vector<IloInt>& solution, const unsigned int& time_limit=60, const int& verbose=0) const;
-    double compute_robust_score_bis(const std::vector<IloInt>& solution, const unsigned int& time_limit=60, const int& verbose=0) const;
+    double compute_robust_score_milp(IloEnv env, const std::vector<IloInt>& solution, const unsigned int& time_limit=60, const unsigned int& verbose=0) const;
+    double compute_robust_score_knapsack(const std::vector<IloInt>& solution, const unsigned int& verbose=0) const;
     double compute_static_constraint(const std::vector<IloInt>& solution) const;
-    double compute_robust_constraint(IloEnv env, const std::vector<IloInt>& solution, const unsigned int& time_limit=60, const int& verbose=0) const;};
-
+    double compute_robust_constraint_milp(IloEnv env, const std::vector<IloInt>& solution, const unsigned int& time_limit=60, const unsigned int& verbose=0) const;
+    double compute_robust_constraint_knapsack(const std::vector<IloInt>& solution, const unsigned int& verbose=0) const;
+};
 
 #endif

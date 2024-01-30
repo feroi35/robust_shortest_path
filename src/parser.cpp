@@ -38,11 +38,8 @@ Instance::Instance(IloEnv env, char filename[]) {
     // ] mat = [
     file >> readChar >> readChar >> readChar >> readChar >> readChar >> readChar;
 
-    // std::map<Index,double> d_;
-    // std::map<Index,double> D_;
     std::vector<std::vector<float>> d_(n, std::vector<float>(n, undefinedValue));
     std::vector<std::vector<float>> D_(n, std::vector<float>(n, undefinedValue));
-
     while (readChar != ']') {
         Arc v;
         file >> v.tail;
@@ -50,8 +47,6 @@ Instance::Instance(IloEnv env, char filename[]) {
         file >> v.d;
         file >> v.D;
         file >> readChar; // either ';' or ']'
-        // d_[Index(v.i-1,v.j-1)] = v.d;
-        // D_[Index(v.i-1,v.j-1)] = v.D;
         d_[v.tail-1][v.head-1] = v.d;
         D_[v.tail-1][v.head-1] = v.D;
         mat.push_back(v);
@@ -73,6 +68,7 @@ Instance::Instance(IloEnv env, char filename[]) {
     reverse_neighbors_list = reverse_neighbors;
 }
 
+
 Instance::Instance(const Instance& instan){
     name = instan.name;
     n = instan.n;
@@ -88,7 +84,7 @@ Instance::Instance(const Instance& instan){
     D_vec = instan.D_vec;
     d = instan.d;
     D = instan.D;
-    mat =instan.mat;
+    mat = instan.mat;
     neighbors_list = instan.neighbors_list;
     reverse_neighbors_list = instan.reverse_neighbors_list;
 }
@@ -122,9 +118,12 @@ void Instance::display() const {
 
 
 double Instance::compute_static_score(const std::vector<IloInt>& solution) const {
+    if (solution.empty()) {
+        throw std::domain_error("Empty solution");
+    }
     double static_score = 0.0;
     IloInt current_node = solution[0];
-    IloInt next_node = solution[1];
+    IloInt next_node;
     if (current_node != s) {
         throw std::domain_error("First node of solution is not s");
     }
@@ -133,15 +132,204 @@ double Instance::compute_static_score(const std::vector<IloInt>& solution) const
         for (unsigned int a=0; a<n_arc; a++) {
             if (mat[a].tail == current_node && mat[a].head == next_node) {
                 static_score += mat[a].d;
+                current_node = next_node;
                 break;
             }
         }
-        current_node = next_node;
+        if (current_node != next_node) {
+            throw std::domain_error("No arc between " + std::to_string(current_node) + " and " + std::to_string(next_node));
+        }
     }
     if (current_node != t) {
         throw std::domain_error("Last node of solution is not t");
     }
     return static_score;
+}
+
+
+double Instance::compute_robust_score_milp(IloEnv env, const std::vector<IloInt>& solution,
+        const unsigned int& time_limit, const unsigned int& verbose) const {
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    if (solution.empty()) {
+        throw std::domain_error("Empty solution");
+    }
+    unsigned int n_var = solution.size()-1; // one variable for each arc
+    if (n_var == 0) {
+        if (solution[0] == s && solution[0] == t) {
+            return 0.0;
+        } else {
+            throw std::domain_error("Solution of size 1 is not s=t");
+        }
+    }
+
+    IloModel model(env);
+
+    IloNumVarArray delta1(env, n_var); // Variables delta1
+    IloExpr expression_obj(env); // Expression of the objective
+
+    IloInt current_node = solution[0];
+    IloInt next_node;
+    if (current_node != s) {
+        throw std::domain_error("First node of solution is not s");
+    }
+    for (unsigned int k=0; k < n_var; k++) {
+        next_node = solution[k+1];
+        for (unsigned int a = 0; a < n_arc; a++) {
+            if (mat[a].tail == current_node && mat[a].head == next_node) {
+                delta1[k] = IloNumVar(env, 0.0, D_vec[a]);
+                expression_obj += mat[a].d * (1 + delta1[k]);
+                current_node = next_node;
+                break;
+            }
+        }
+        if (current_node != next_node) {
+            throw std::domain_error("No arc between " + std::to_string(current_node) + " and " + std::to_string(next_node));
+        }
+    }
+    if (current_node != t) {
+        throw std::domain_error("Last node of solution is not t");
+    }
+    IloObjective obj(env, expression_obj, IloObjective::Maximize);
+    model.add(obj);
+    expression_obj.end();
+
+    model.add(IloSum(delta1) <= d1);
+
+    IloCplex cplex(model);
+    cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
+    if (verbose < 2) cplex.setOut(env.getNullStream());
+
+    cplex.solve();
+
+    if (cplex.getStatus() == IloAlgorithm::Infeasible) {
+        throw std::domain_error("No solution in robust objective problem");
+    } else if (cplex.getStatus() == IloAlgorithm::Unknown) {
+        throw std::domain_error("No solution found for instance " + name + ". Maybe not enough time");
+    } else if (cplex.getStatus() != IloAlgorithm::Optimal) {
+        throw std::domain_error("Solution of subproblem not optimal for instance " + name);
+    }
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    if (verbose >= 1) {
+        std::cout << "MILP time to compute robust constraint: " << duration.count() << " microseconds" << std::endl;
+    }
+    return cplex.getObjValue();
+}
+
+
+// double Instance::compute_robust_score_knapsack(const std::vector<IloInt>& solution, const unsigned int& verbose) const {
+//     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+//     if (solution.empty()) {
+//         throw std::domain_error("Empty solution");
+//     }
+//     unsigned int n_edges = solution.size()-1;
+//     if (n_edges == 0) {
+//         if (solution[0] == s && solution[0] == t) {
+//             return 0.0;
+//         } else {
+//             throw std::domain_error("Solution of size 1 is not s=t");
+//         }
+//     }
+
+//     std::vector<IloNum> weights(n_edges, 0.0);
+//     std::vector<IloNum> uncertainties(n_edges, 0.0);
+
+//     unsigned int current_node = solution[0];
+//     unsigned int next_node;
+//     if (current_node != s) {
+//         throw std::domain_error("First node of solution is not s");
+//     }
+//     double static_score = 0.0;
+//     for (unsigned int k=1; k < n_edges+1; k++) {
+//         next_node = solution[k];
+//         for (unsigned int a=0; a < n_arc; a++) {
+//             if (mat[a].tail == current_node && mat[a].head == next_node) {
+//                 weights[k-1] = mat[a].d;
+//                 uncertainties[k-1] = mat[a].D;
+//                 static_score += mat[a].d;
+//                 current_node = next_node;
+//                 break;
+//             }
+//         }
+//         if (current_node != next_node) {
+//             throw std::domain_error("No arc between " + std::to_string(current_node) + " and " + std::to_string(next_node));
+//         }
+//     }
+//     if (current_node != t) {
+//         throw std::domain_error("Last node of solution is not t");
+//     }
+
+//     std::vector<size_t> argsorted_weights = argsort(weights);
+//     double robust_attack = 0.0;
+//     double used_budget = 0.0;
+//     int idx = n_edges-1;
+//     while (used_budget < d1 && idx >= 0) {
+//         unsigned int arc_idx = argsorted_weights[idx];
+//         float delta1_i = std::min(d1 - used_budget, uncertainties[arc_idx]);
+//         used_budget += delta1_i;
+//         robust_attack += delta1_i * weights[arc_idx];
+//         idx--;
+//     }
+//     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+//     std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+//     if (verbose >= 1) {
+//         std::cout << "Time to compute robust constraint: " << duration.count() << " microseconds" << std::endl;
+//     }
+//     return static_score + robust_attack;
+// }
+
+double Instance::compute_robust_score_knapsack(const std::vector<IloInt>& solution, const unsigned int& verbose) const {
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    if (solution.empty()) {
+        throw std::domain_error("Empty solution");
+    }
+    unsigned int n_edges = solution.size()-1;
+    if (n_edges == 0) {
+        if (solution[0] == s && solution[0] == t) {
+            return 0.0;
+        } else {
+            throw std::domain_error("Solution of size 1 is not s=t");
+        }
+    }
+
+    std::vector<IloNum> weights(n_edges, 0.0);
+    std::vector<IloNum> uncertainties(n_edges, 0.0);
+
+    unsigned int current_node = solution[0];
+    unsigned int next_node;
+    if (current_node != s) {
+        throw std::domain_error("First node of solution is not s");
+    }
+    double static_score = 0.0;
+    for (unsigned int k=1; k < n_edges+1; k++) {
+        next_node = solution[k];
+        weights[k-1] = d[current_node-1][next_node-1];
+        uncertainties[k-1] = D[current_node-1][next_node-1];
+        static_score += d[current_node-1][next_node-1];
+        current_node = next_node;
+
+    }
+    if (current_node != t) {
+        throw std::domain_error("Last node of solution is not t");
+    }
+
+    std::vector<size_t> argsorted_weights = argsort(weights);
+    double robust_attack = 0.0;
+    double used_budget = 0.0;
+    int idx = n_edges-1;
+    while (used_budget < d1 && idx >= 0) {
+        unsigned int arc_idx = argsorted_weights[idx];
+        float delta1_i = std::min(d1 - used_budget, uncertainties[arc_idx]);
+        used_budget += delta1_i;
+        robust_attack += delta1_i * weights[arc_idx];
+        idx--;
+    }
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    if (verbose >= 1) {
+        std::cout << "Time to compute robust constraint: " << duration.count() << " microseconds" << std::endl;
+    }
+    return static_score + robust_attack;
 }
 
 
@@ -154,76 +342,16 @@ double Instance::compute_static_constraint(const std::vector<IloInt>& solution) 
 }
 
 
-double Instance::compute_robust_score(IloEnv env, const std::vector<IloInt>& solution,
-        const unsigned int& time_limit, const int& verbose) const {
-    unsigned int n_var = solution.size()-1; // one variable for each arc
-    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-    IloModel model(env);
-
-    // Variables
-    IloNumVarArray delta1(env, n_var);
-    unsigned int start_node;
-    unsigned int end_node;
-    for (unsigned int k=0; k < n_var; k++) {
-        start_node = solution[k];
-        end_node = solution[k+1];
-        for (unsigned int a = 0; a < n_arc; a++) {
-            if (mat[a].tail == start_node && mat[a].head == end_node) {
-                delta1[k] = IloNumVar(env, 0.0, D_vec[a]);
-                break;
-            }
-        }
-    }
-
-    // Objective
-    IloExpr expression_obj(env);
-    for (unsigned int k=0; k < n_var; k++) {
-        start_node = solution[k];
-        end_node = solution[k+1];
-        for (unsigned int a = 0; a < n_arc; a++) {
-            if (mat[a].tail == start_node && mat[a].head == end_node) {
-                expression_obj += mat[a].d * (1 + delta1[k]);
-                break;
-            }
-        }
-    }
-    IloObjective obj(env, expression_obj, IloObjective::Maximize);
-    model.add(obj);
-    expression_obj.end();
-
-    // Constraints
-    model.add(IloSum(delta1) <= d1);
-
-    IloCplex cplex(model);
-    cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
-    if (verbose < 2) cplex.setOut(env.getNullStream());
-
-    cplex.solve();
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-
-    if (cplex.getStatus() == IloAlgorithm::Infeasible) {
-        std::cerr << "No Solution" << std::endl;
-        throw std::domain_error("No solution in robust objective problem");
-    }
-    if (verbose >= 1) {
-        std::cout << "robust objective: " << cplex.getObjValue() << std::endl;
-        std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
-    }
-    return cplex.getObjValue();
-}
-
-
-double Instance::compute_robust_constraint(IloEnv env, const std::vector<IloInt>& solution,
-        const unsigned int& time_limit,const int& verbose) const {
+double Instance::compute_robust_constraint_milp(IloEnv env, const std::vector<IloInt>& solution,
+        const unsigned int& time_limit,const unsigned int& verbose) const {
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     unsigned int n_sol = solution.size();
+    if (n_sol == 0) {
+        throw std::domain_error("Empty solution");
+    }
     IloModel model(env);
 
-    // Variables
     IloNumVarArray delta2(env, n_sol, 0.0, 2.0);
-
-    // Objective
     IloExpr expression_obj(env);
     unsigned int node;
     for (unsigned int k = 0; k < n_sol; k++) {
@@ -234,7 +362,6 @@ double Instance::compute_robust_constraint(IloEnv env, const std::vector<IloInt>
     model.add(obj);
     expression_obj.end();
 
-    // Constraints
     model.add(IloSum(delta2) <= d2);
 
     IloCplex cplex(model);
@@ -242,50 +369,60 @@ double Instance::compute_robust_constraint(IloEnv env, const std::vector<IloInt>
     if (verbose < 2) cplex.setOut(env.getNullStream());
 
     cplex.solve();
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
     if (cplex.getStatus() == IloAlgorithm::Infeasible){
-        std::cerr << "No Solution for robust constraint with instance " << name << std::endl;
         throw std::domain_error("No solution in robust constraint problem");
+    } else if (cplex.getStatus() == IloAlgorithm::Unknown) {
+        throw std::domain_error("No solution found for instance " + name + ". Maybe not enough time");
+    } else if (cplex.getStatus() != IloAlgorithm::Optimal) {
+        throw std::domain_error("Solution of subproblem not optimal for instance " + name);
     }
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     if (verbose >= 1) {
-        std::cout << "robust constraint: " << cplex.getObjValue() << std::endl;
-        std::cout << "time: " << static_cast<double>(duration.count()) / 1e6 << std::endl;
+        std::cout << "Time to compute robust constraint: " << duration.count() << " microseconds" << std::endl;
     }
     return cplex.getObjValue();
 }
 
 
-double Instance::compute_robust_score_bis(const std::vector<IloInt>& solution, const unsigned int& time_limit, const int& verbose) const {
-    unsigned int n_edges = solution.size()-1; // one variable for each arc
-    std::vector<IloNum> weights(n_edges, 0.0); // on extrait les poids des arcs
-    std::vector<IloNum> uncertainties(n_edges, 0.0); // on extrait les incertitudes des arcs
+double Instance::compute_robust_constraint_knapsack(const std::vector<IloInt>& solution, const unsigned int& verbose) const {
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    unsigned int n_cities = solution.size();
+    if (n_cities == 0) {
+        throw std::domain_error("Empty solution");
+    }
+    std::vector<IloNum> uncertain_weights(n_cities, 0.0);
 
     unsigned int current_node = solution[0];
-    double static_score = 0.0;
-    for (unsigned int k=1; k < n_edges+1; k++) {
-        unsigned int next_node = solution[k];
-        for (unsigned int a=0; a < n_arc; a++) {
-            if (mat[a].tail == current_node && mat[a].head == next_node) {
-                weights[k-1] = mat[a].d;
-                uncertainties[k-1] = mat[a].D;
-                static_score += mat[a].d;
-                break;
-            }
-        }
-        current_node = next_node;
+    if (current_node != s) {
+        throw std::domain_error("First node of solution is not s");
     }
-    std::vector<size_t> argsorted_weights = argsort(weights);
-    double robust_attack = 0.0;
+    double static_constraint = 0.0;
+    for (unsigned int k=0; k < n_cities; k++) {
+        current_node = solution[k];
+        uncertain_weights[k] = ph[current_node-1];
+        static_constraint += p[current_node-1];
+    }
+    if (current_node != t) {
+        throw std::domain_error("Last node of solution is not t");
+    }
+
+    std::vector<size_t> argsorted_weights = argsort(uncertain_weights);
+    double robust_constraint = 0.0;
     double used_budget = 0.0;
-    int idx = n_edges-1;
-    while (used_budget < d1 && idx >= 0) {
+    int idx = n_cities-1;
+    while (used_budget < d2 && idx >= 0) {
         unsigned int arc_idx = argsorted_weights[idx];
-        float delta1_i = std::min(d1 - used_budget, uncertainties[arc_idx]);
-        used_budget += delta1_i;
-        robust_attack += delta1_i * weights[arc_idx];
+        float delta2_i = std::min(d2 - used_budget, 2.0);
+        used_budget += delta2_i;
+        robust_constraint += delta2_i * uncertain_weights[arc_idx];
         idx--;
     }
-    return static_score + robust_attack;
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    if (verbose >= 1) {
+        std::cout << "Time to compute robust constraint: " << duration.count() << " microseconds" << std::endl;
+    }
+    return static_constraint + robust_constraint;
 }

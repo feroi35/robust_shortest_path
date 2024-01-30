@@ -11,13 +11,12 @@ class Instance; // forward declaration
 class IloEnv;
 
 bool cmp_index_val(const std::tuple<int, float>& a, const std::tuple<int, float>& b);
-
 bool cmp_dij(const std::tuple<float, float>& a, const std::tuple<float, float>& b);
 
 class node_info{
     public:
         int index;
-        int parent;   
+        int parent;
         float dist;
         float robust_dist;
         float dist_nodes;
@@ -36,7 +35,7 @@ class node_info{
         bool is_knapsack_phi_full(const float& d2) const { return 2*knapsack_phi.size() >= d2; };
 
         float compute_tot_dist(const double K) const { return dist + robust_dist + K*dist_nodes + K*robust_dist_nodes; };
-        
+
         void redo_knapsack_dij(const Instance& inst, const int& new_node);
         void redo_knapsack_phi(const Instance& inst, const int& new_node);
 };
@@ -62,11 +61,12 @@ double compute_robust_score(const Instance& inst, const std::vector<int>& sol);
 double compute_static_constraint(const Instance& inst, const std::vector<int>& sol);
 double compute_robust_constraint(const Instance& inst, const std::vector<int>& sol);
 
+
 class Heuristic_instance{
     public:
         std::vector<float> inf_dist;
         std::vector<float> inf_dist_nodes;
-        
+
         // Heuristic_instance(): inst(), inf_dist(), inf_dist_nodes() {};
         Heuristic_instance(const Instance& inst);
         ~Heuristic_instance(){};

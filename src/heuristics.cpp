@@ -2,8 +2,6 @@
 #include "heuristics.h"
 
 
-// #include <limits>
-
 bool cmp_index_val(const std::tuple<int, float>& a, const std::tuple<int, float>& b) {
     return std::get<1>(a) > std::get<1>(b);
 }
@@ -54,7 +52,7 @@ void node_info::compute_nodes_robust(const float d2){
 
 
 void node_info::redo_knapsack_dij(const Instance& inst, const int& new_node){
-    
+
     float new_dij = inst.d[parent][new_node];
     float new_Dij = inst.D[parent][new_node];
 
@@ -469,7 +467,7 @@ void Heuristic_instance::complete_astar_solve(const Instance& inst, IloEnv env, 
     std::vector<int> sol_0 = astar_solve(inst, 0., verbose);
     Solution_info sol_inf(inst, sol_0, 0, start);
 
-    std::vector<int> sol_1 = astar_solve(inst, 1., verbose); 
+    std::vector<int> sol_1 = astar_solve(inst, 1., verbose);
     Solution_info sol_sup(inst, sol_1, 1., start);
 
     double sup_K = 1.;
@@ -490,7 +488,7 @@ void Heuristic_instance::complete_astar_solve(const Instance& inst, IloEnv env, 
         if (verbose>0){
             std::cout << "initialisation of K took too much iter" << counter_iter_init << "/" << 20 << std::endl;
         }
-        
+
         std::vector<int> retrieved_feasible_sol = retrieve_feaible_sol(inst);
 
         if(compute_robust_constraint(inst, retrieved_feasible_sol) > inst.S){
@@ -521,7 +519,7 @@ void Heuristic_instance::complete_astar_solve(const Instance& inst, IloEnv env, 
         << inst.S << ","
         << path_str << std::endl;
     }
-    
+
     else{
         std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start);
         int iter = 0;

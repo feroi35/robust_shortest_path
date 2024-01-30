@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
     if (argc > 3) {
         time_limit = atoi(argv[3]);
     }
-    int verbose = 0;
+    unsigned int verbose = 0;
     if (argc > 4) {
         verbose = atoi(argv[4]);
     }
@@ -30,20 +30,14 @@ int main(int argc, char **argv) {
     if (verbose > 3) instance.display();
 
     try {
-        if(strcmp(method, "heuristics") == 0){
-
+        if (strcmp(method, "heuristics") == 0) {
             Heuristic_instance heur(instance);
             heur.inf_dist = heur.backward_dijkstra_distance(instance);
             heur.inf_dist_nodes = heur.backward_dijkstra_nodes(instance);
-
-            if(verbose>0){
-                std::cout <<"initialisation heur faite" << std::endl;
-            }
+            if (verbose>0) std::cout <<"Initialisation heuristique faite" << std::endl;
 
             double precision_K = 0.00001;
             heur.complete_astar_solve(instance, env, precision_K, 2000, 20, verbose);
-
-            return 0;
         }
         else if(strcmp(method, "static") == 0) {
             static_solve(env, instance, time_limit, verbose);
@@ -60,10 +54,11 @@ int main(int argc, char **argv) {
         if (verbose > 0) {
             std::cout << std::endl;
             std::cout << "static objective = " << instance.compute_static_score() << std::endl;
-            std::cout << "robust objective = " << instance.compute_robust_score(env) << std::endl;
-            std::cout << "robust objective knapsack = " << instance.compute_robust_score_bis() << std::endl;
+            std::cout << "robust objective MILP = " << instance.compute_robust_score_milp(env, time_limit, verbose) << std::endl;
+            std::cout << "robust objective knapsack = " << instance.compute_robust_score_knapsack(verbose) << std::endl;
             std::cout << "static constraint = " << instance.compute_static_constraint() << std::endl;
-            std::cout << "robust constraint  = " << instance.compute_robust_constraint(env) << std::endl;
+            std::cout << "robust constraint MILP = " << instance.compute_robust_constraint_milp(env, time_limit, verbose) << std::endl;
+            std::cout << "robust constraint knapsack = " << instance.compute_robust_constraint_knapsack(verbose) << std::endl;
             std::cout << "S = " << instance.S << std::endl;
         }
     } catch (IloException& e) {

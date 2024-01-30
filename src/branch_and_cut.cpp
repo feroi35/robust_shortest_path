@@ -200,11 +200,11 @@ void branch_and_cut_solve(IloEnv env, Instance& inst, const unsigned int& time_l
 
     std::cout << inst.name << ","
         << "branch_and_cut,"
-        << inst.compute_robust_score(env) << ","
+        << inst.compute_robust_score_milp(env) << ","
         << cplex.getBestObjValue() << ","
         << static_cast<double>(duration.count()) / 1e6 << ","
         << cplex.getNnodes() << ","
-        << inst.compute_robust_constraint(env) << ","
+        << inst.compute_robust_constraint_milp(env) << ","
         << inst.compute_static_score() << ","
         << inst.compute_static_constraint() << ","
         << inst.S << ","
