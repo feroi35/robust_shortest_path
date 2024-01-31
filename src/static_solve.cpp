@@ -3,6 +3,7 @@
 
 
 void static_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, const int& verbose) {
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     IloModel model(env);
 
     // Variables
@@ -15,27 +16,29 @@ void static_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, co
 
     // Constraints
     model.add(IloScalProd(y, inst.p) <= inst.S);
+    // Flow conservation
     for (unsigned int i=0; i<inst.n; i++) {
-        // Flow conservation
         IloExpr out_arcs_i(env);
         IloExpr in_arcs_i(env);
         for (unsigned int a=0; a<inst.n_arc; a++) {
-            if (inst.mat[a].tail == i+1)
+            // It may appear inefficient to do as so O(n^3)
+            // But it is faster in practice than to make a vector of expression
+            if (inst.mat[a].tail-1 == i)
                 out_arcs_i += x[a];
-            if (inst.mat[a].head == i+1)
+            if (inst.mat[a].head-1 == i)
                 in_arcs_i += x[a];
         }
         if (i != inst.t-1) {
             model.add(out_arcs_i == y[i]);
         } else {
-            model.add(out_arcs_i == 0);
             // you can't get out of t
+            model.add(out_arcs_i == 0);
         }
         if (i != inst.s-1) {
             model.add(in_arcs_i == y[i]);
         } else {
-            model.add(in_arcs_i == 0);
             // you can't get into s
+            model.add(in_arcs_i == 0);
         }
         out_arcs_i.end();
         in_arcs_i.end();
@@ -47,7 +50,6 @@ void static_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, co
     cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
     if (verbose < 2) cplex.setOut(env.getNullStream());
 
-    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     cplex.solve();
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
