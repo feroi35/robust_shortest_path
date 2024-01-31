@@ -29,6 +29,8 @@ int main(int argc, char **argv) {
     Instance instance(env, filename);
     if (verbose > 3) instance.display();
 
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+
     try {
         if (strcmp(method, "heuristics") == 0) {
             Heuristic_instance heur(instance);
@@ -52,6 +54,9 @@ int main(int argc, char **argv) {
             exit(1);
         }
         if (verbose > 0) {
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+            std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
             std::cout << std::endl;
             std::cout << "static objective = " << instance.compute_static_score() << std::endl;
             std::cout << "robust objective MILP = " << instance.compute_robust_score_milp(env, time_limit, verbose) << std::endl;
@@ -60,6 +65,7 @@ int main(int argc, char **argv) {
             std::cout << "robust constraint MILP = " << instance.compute_robust_constraint_milp(env, time_limit, verbose) << std::endl;
             std::cout << "robust constraint knapsack = " << instance.compute_robust_constraint_knapsack(verbose) << std::endl;
             std::cout << "S = " << instance.S << std::endl;
+            std::cout << "Time taken = " << static_cast<double>(duration.count()) / 1e6 << std::endl;
         }
     } catch (IloException& e) {
         std::cerr << "Ilo exception caught: " << e << std::endl;

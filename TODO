@@ -16,6 +16,9 @@ Permet de standardiser le renvoi.
 
 - warm start à l'aide de l'heuristique? Dans dualized et plans coupants, solution réalisable qui permet de couper des branches plus vite et accélerer la résolution
 
+- Plans coupants: les solutions trouvées s'additionnent. Warm start avec autant de solutions initiales que d'itération. 
+Serait mieux de garder  uniquement la dernière?
+
 
 ## 04.01
 
@@ -336,11 +339,61 @@ Pourquoi j'ai ce message même lorsque je ne fais pas de warm start? Le code n'e
 
 **MIP emphasis: balance optimality and feasibility**
 Si on considère que l'heuristique est suffisamment bonne. On peut utiliser dualized en se concentrant uniquement sur l'optimality?
+
+Dans le code réalisé, les solutions trouvées s'additionnent. Warm start avec autant de solutions initiales que d'itération. 
+Serait mieux de garder  uniquement la dernière?
+
 ## 25.01 r
+
 heuristique fonctionne très rapidement (environ 1s) pour la plupart des instances.
 certains cas pathologique: 1300_BAY arrive pas a trouver une solution réalisable au début avec un dijkstra. a priori pas adapté aux petites instances.
 Pour les cas qui fonctionnent, la "borne_inf" semble bien etre une borne inf, mais aucune certitude -> est ce que on peut le prouver?
 Il faudrait regarder comment injecter la solution de l'heuristique dans un B&B et voir l'impact sur les performances.
 La borne inf en est une si la contrainte robuste est contraignante: si on est laregment bon, on va etre ok pour K=0 et donc c'est pas pertinent
 
+## 31.01
 
+**parser.cpp**
+Remise à jour des compute_score. Version knapsack et milp en utilisant les vecteurs qu'on ne stockait pas avant (D et d)
+résolution des sous problèmes en 1e-5 secondes. contre 1e-3
+
+Ce n'est pas la création de ces vecteurs qui prenaient tant de place en mémoire, c'était la rédaction du problèmes avec x[i][j] apparemment. Mais ne pose pas de problème à stocker comme ça. 
+
+**modèle statique**
+Dans la rédaction des contraintes, celle de flow s'écrit comme suit: 
+for (node) {
+    IloExpr out_arc_i;
+    IloExpr in_arc_i;
+    for (arc) {
+        if arc_correspond {
+            blabla
+        }
+    }
+}
+
+Mémoire: O(1) mais complexité en O(n^3)
+
+Si on stocke les n_nodes expressions. On peut s'éviter une boucle sur n. 
+for (arc) {
+    out_arc[arc.head] += x[arc]
+    ...
+}
+
+Mémoire O(n) mais complexité en O(n^2)
+Cependant, en pratique. La gestion de la mémoire fait que plus de temps est pris lors de la 2nde écriture. 
+Et temps négligeable par rapport à la résolution qui suit. 
+
+**Multi-objectif**
+Plusieurs chemins sont équivalents -> Symétries. Pour les briser, on peut ajouter un 2e objectif qui est de minimiser la somme des indices des villes (arbitraire)
+
+https://www.ibm.com/docs/en/icos/22.1.1?topic=optimization-cpxerr-not-multiobj
+All generic callbacks and legacy optimization informational callbacks are compatible with multiobjective optimization. However, all other legacy optimization callbacks, in particular control callbacks, are not compatible with multiobjective optimization.
+Benders decomposition is not compatible with multiobjective optimization.
+Writing the dual problem is not compatible with multiobjective optimization.
+Populate is not compatible with multiobjective optimization.
+Polishing is not compatible with multiobjective optimization.
+
+Rien compris. Je n'arrive pas à savoir si c'est possible. Beaucoup de sources contradictoires. Le Manuel de CPLEX est objectivement mal fait. Les exemples présents lors de l'installation ne sont pas clairs non plus. 
+**Ilo exception caught: MultipleObjException: IloCplex can not handle multiple objectives**
+
+On va dire que ce n'est pas possible alors que le site de CPLEX semble dire que c'est possible, y compris pour les MILP...
