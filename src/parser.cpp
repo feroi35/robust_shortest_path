@@ -374,8 +374,12 @@ double Instance::compute_robust_constraint_knapsack(const std::vector<IloInt>& s
 
 
 std::vector<std::vector<int>> arcs_to_forbid(const Instance& inst, const int& i, const int& j){
-    std::vector<tuple<Arc2,Arc2,float,float>> sub_paths;
+    // return a vector where each element is a path that shouldn't be use to reduce symetry, ie there exist an exactly similar path
+    // the format is node_i, node_j, index_arc_i_k, index_arc_k_j where (ik)+(kj) is the path that shouldn't be used, and the index is the index
+    // of the arc in instance.mat
+    std::vector<tuple<Arc2,Arc2,float,float>> sub_paths; //Arc2 are arcs but with int and a constructor
 
+    // extract the subpathof length 2 from i to j
     for (unsigned int l = 0; l<inst.neighbors_list[i].size(); ++l) {
         int k = inst.neighbors_list[i][l];
         if (std::count(inst.reverse_neighbors_list[j].begin(), inst.reverse_neighbors_list[j].end(), k)){
@@ -386,7 +390,7 @@ std::vector<std::vector<int>> arcs_to_forbid(const Instance& inst, const int& i,
     }
 
     std::vector<std::vector<int>> to_forbid;
-    std::vector<bool> already_forbade(sub_paths.size(),false);
+    std::vector<bool> already_forbade(sub_paths.size(),false); //to avoid checking twice the same subpath
 
     for(unsigned int l=0; l<sub_paths.size(); l++){
         if (already_forbade[l]) continue;
