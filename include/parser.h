@@ -7,8 +7,10 @@
 ILOSTLBEGIN // macro to avoid incompatibility. Important to be before the other includes
 #include <chrono>
 #include <vector>
+#include <tuple>
 #include <numeric>      // std::iota
 #include <algorithm>    // std::sort, std::stable_sort
+// #include <bits/stdc++.h> //for map?
 
 
 const double undefinedValue = std::numeric_limits<double>::quiet_NaN();
@@ -30,6 +32,14 @@ struct Arc {
     IloNum D;
 };
 
+struct Arc2 {
+    int head;
+    int tail;
+    float d;
+    float D;
+    Arc2(int head, int tail, float d, float D): head(head), tail(tail), d(d), D(D) {};
+};
+
 struct Instance {
     std::string name;
     IloInt n; // nombre de noeuds
@@ -44,6 +54,7 @@ struct Instance {
     IloNumArray d_vec; // durée de trajet des arcs
     IloNumArray D_vec; // incertitude durée de trajet des arcs
     std::vector<Arc> mat;
+    std::vector<std::vector<int>> map_mat; // matrice liant les sommet a l'arc correspondant
 
     std::vector<std::vector<float>> d; // matrice des durées de trajet
     std::vector<std::vector<float>> D; // matrice des incertitudes des durées de trajet
@@ -73,5 +84,8 @@ struct Instance {
     double compute_robust_constraint_milp(IloEnv env, const std::vector<IloInt>& solution, const unsigned int& time_limit=60, const unsigned int& verbose=0) const;
     double compute_robust_constraint_knapsack(const std::vector<IloInt>& solution, const unsigned int& verbose=0) const;
 };
+
+std::vector<std::vector<int>> arcs_to_forbid(const Instance& inst, const int& i, const int& j);
+std::vector<std::vector<int>> arcs_to_forbid(const Instance& inst);
 
 #endif

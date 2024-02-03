@@ -40,6 +40,8 @@ Instance::Instance(IloEnv env, char filename[]) {
 
     std::vector<std::vector<float>> d_(n, std::vector<float>(n, undefinedValue));
     std::vector<std::vector<float>> D_(n, std::vector<float>(n, undefinedValue));
+    std::vector<std::vector<int>> map_mat_(n, std::vector<int>(n, -1));
+    int index = 0;
     while (readChar != ']') {
         Arc v;
         file >> v.tail;
@@ -52,10 +54,13 @@ Instance::Instance(IloEnv env, char filename[]) {
         mat.push_back(v);
         d_vec.add(v.d);
         D_vec.add(v.D);
+        map_mat_[v.tail-1][v.head-1] = index;
+        index++;
     }
     file.close();
     d = d_;
     D = D_;
+    map_mat = map_mat_;
     n_arc = mat.size();
 
     std::vector<std::vector<int>> neighbors(n, std::vector<int>());
@@ -369,4 +374,72 @@ double Instance::compute_robust_constraint_knapsack(const std::vector<IloInt>& s
         std::cout << "Time to compute robust constraint: " << duration.count() << " microseconds" << std::endl;
     }
     return static_constraint + robust_constraint;
+}
+
+
+
+std::vector<std::vector<int>> arcs_to_forbid(const Instance& inst, const int& i, const int& j){
+    std::vector<tuple<Arc2,Arc2,float,float>> sub_paths;
+
+    for (unsigned int l = 0; l<inst.neighbors_list[i].size(); ++l) {
+        int k = inst.neighbors_list[i][l];
+        if (std::count(inst.reverse_neighbors_list[j].begin(), inst.reverse_neighbors_list[j].end(), k)){
+            Arc2 arc1 = Arc2(k,i,inst.d[i][k],inst.D[i][k]);
+            Arc2 arc2 = Arc2(j,k,inst.d[k][j],inst.D[k][j]);
+            sub_paths.push_back(std::make_tuple(arc1,arc2,inst.p[k],inst.ph[k]));
+        }
+    }
+
+    std::vector<std::vector<int>> to_forbid;
+    std::vector<bool> already_forbade(sub_paths.size(),false);
+
+    for(unsigned int l=0; l<sub_paths.size(); l++){
+        if (already_forbade[l]) continue;
+        bool found_better = false;
+        for(unsigned int m=0; m<sub_paths.size(); m++){
+            if (m==l || already_forbade[m]) continue;
+            if (std::get<2>(sub_paths[m])==std::get<2>(sub_paths[l])){
+                if (std::get<3>(sub_paths[m])==std::get<3>(sub_paths[l])){
+                    bool same_ds = (std::get<0>(sub_paths[m]).d == std::get<0>(sub_paths[l]).d) && (std::get<1>(sub_paths[m]).d == std::get<1>(sub_paths[l]).d) && (std::get<0>(sub_paths[m]).D == std::get<0>(sub_paths[l]).D) && (std::get<1>(sub_paths[m]).D == std::get<1>(sub_paths[l]).D);
+                    bool inverted_ds = (std::get<0>(sub_paths[m]).d == std::get<1>(sub_paths[l]).d) && (std::get<1>(sub_paths[m]).d == std::get<0>(sub_paths[l]).d) && (std::get<0>(sub_paths[m]).D == std::get<1>(sub_paths[l]).D) && (std::get<1>(sub_paths[m]).D == std::get<0>(sub_paths[l]).D);
+                    if (same_ds || inverted_ds){
+                            if(std::get<0>(sub_paths[m]).head > std::get<0>(sub_paths[l]).head){
+                                already_forbade[m] = true;
+                                int k = std::get<0>(sub_paths[m]).head;
+                                int index_first_arc = inst.map_mat[i][k];
+                                int index_second_arc = inst.map_mat[k][j];
+                                std::vector<int> to_forbid_l{i, j, index_first_arc, index_second_arc};
+                                to_forbid.push_back(to_forbid_l);
+                            }
+                            else{
+                                found_better = true;
+                            }
+                        }
+                    }
+                }
+            }
+        if (found_better==true){
+            already_forbade[l] = true;
+            int k = std::get<0>(sub_paths[l]).head;
+            int index_first_arc = inst.map_mat[i][k];
+            int index_second_arc = inst.map_mat[k][j];
+            std::vector<int> to_forbid_l{i, j, index_first_arc, index_second_arc};
+            to_forbid.push_back(to_forbid_l);
+        }
+    }
+    return to_forbid;
+}
+
+std::vector<std::vector<int>> arcs_to_forbid(const Instance& inst){
+
+    std::vector<std::vector<int>> to_forbid;
+    for (unsigned int i=0; i<inst.n; i++){
+        for (unsigned int j=0; j<inst.n; j++){
+            if (i != j){
+                std::vector<std::vector<int>> to_forbid_ij = arcs_to_forbid(inst,i,j);
+                to_forbid.insert(to_forbid.end(), to_forbid_ij.begin(), to_forbid_ij.end());
+            }
+        }
+    }
+    return to_forbid;
 }

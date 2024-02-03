@@ -44,7 +44,8 @@ int main(int argc, char **argv) {
         else if(strcmp(method, "static") == 0) {
             static_solve(env, instance, time_limit, verbose);
         } else if (strcmp(method, "dualized") == 0) {
-            dualized_solve(env, instance, time_limit, verbose);
+            dualized_solve(env, instance, time_limit, false, verbose);
+            // dualized_solve(env, instance, time_limit, true, verbose);
         } else if (strcmp(method, "branch_and_cut") == 0) {
             branch_and_cut_solve(env, instance, time_limit, verbose);
         } else if (strcmp(method, "plans_coupants") == 0) {

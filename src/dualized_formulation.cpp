@@ -2,8 +2,19 @@
 #include "parser.h"
 
 
-void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, const int& verbose) {
+void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, const bool& reduce_symetry, const int& verbose) {
     IloModel model(env);
+
+    std::chrono::steady_clock::time_point start_reduce = std::chrono::steady_clock::now();
+    std::vector<std::vector<int>> to_forbid;
+    if (reduce_symetry){
+        to_forbid = arcs_to_forbid(inst);
+    }
+    std::chrono::steady_clock::time_point end_reduce = std::chrono::steady_clock::now();
+    std::chrono::microseconds duration_reduce = std::chrono::duration_cast<std::chrono::microseconds>(end_reduce - start_reduce);
+    if verbose > 1{
+        cout << "Reducing symetry took " << duration_reduce.count() / 1e6 << " seconds " << endl;
+    }
 
     // Variables
     IloBoolVarArray x(env, inst.n_arc);
@@ -46,6 +57,11 @@ void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, 
     model.add(y[inst.s-1] == 1);
     model.add(y[inst.t-1] == 1);
 
+    // Arcs to forbid to reduce symetry
+    for (unsigned int i=0; i<to_forbid.size(); i++) {
+        model.add(x[to_forbid[i][2]] + x[to_forbid[i][3]] <= 1);
+    }
+
     for (unsigned int a = 0; a < inst.n_arc; ++a) {
         model.add(eta + lambda[a] >= inst.d_vec[a]*x[a]);
     }
@@ -56,6 +72,7 @@ void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, 
 
     // Solve
     IloCplex cplex(model);
+    cplex.setParam(IloCplex::Param::MIP::Tolerances::MIPGap, 0.0);
     cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
     if (verbose < 2) cplex.setOut(env.getNullStream());
 
@@ -63,7 +80,10 @@ void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, 
     cplex.solve();
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-
+    if verbose > 1{
+        cout << "Solving took " << duration.count() / 1e6 << " seconds " << endl;
+    }
+    
     if (cplex.getStatus() == IloAlgorithm::Infeasible) {
         std::cout << inst.name << "," << "dualized,,,,,,,,," << std::endl;
         throw std::domain_error("Infeasible dualized model for instance " + inst.name);
@@ -105,7 +125,7 @@ void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit, 
         << "dualized,"
         << cplex.getObjValue() << ","
         << cplex.getBestObjValue() << ","
-        << static_cast<double>(duration.count()) / 1e6 << ","
+        << static_cast<double>(duration.count()+duration_reduce.count()) / 1e6 << ","
         << cplex.getNnodes() << ","
         << inst.compute_robust_constraint_milp(env) << ","
         << inst.compute_static_score() << ","
