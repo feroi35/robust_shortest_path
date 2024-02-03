@@ -6,8 +6,6 @@
 #include "branch_and_cut.h"
 #include "plans_coupants.h"
 
-#include <typeinfo> // for debug purpose
-
 
 int main(int argc, char **argv) {
     if (argc < 3) {
@@ -32,14 +30,12 @@ int main(int argc, char **argv) {
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
     try {
-        if (strcmp(method_name, "heuristics") == 0) {
-            Heuristic_instance heur(instance);
-            heur.inf_dist = heur.backward_dijkstra_distance(instance);
-            heur.inf_dist_nodes = heur.backward_dijkstra_nodes(instance);
-            if (verbose>0) std::cout <<"Initialisation heuristique faite" << std::endl;
-
-            double precision_K = 0.00001;
-            heur.complete_astar_solve(instance, env, precision_K, 2000, 20, verbose);
+        if (strcmp(method_name, "heuristic") == 0) {
+            double precision_K = 1e-5;
+            int max_iter = 2000;
+            float max_duration = 20.0;
+            HeuristicMethod method(instance, precision_K, max_iter, max_duration);
+            method.solve_and_display(env, instance, time_limit, verbose);
         }
         else if(strcmp(method_name, "static") == 0) {
             StaticMethod method;
@@ -49,7 +45,6 @@ int main(int argc, char **argv) {
             method.solve_and_display(env, instance, time_limit, verbose);
         } else if (strcmp(method_name, "branch_and_cut") == 0) {
             BranchAndCutMethod method;
-            method.solve_and_display(env, instance, time_limit, verbose);
         } else if (strcmp(method_name, "plans_coupants") == 0) {
             PlansCoupantsMethod method;
             method.solve_and_display(env, instance, time_limit, verbose);
@@ -57,6 +52,7 @@ int main(int argc, char **argv) {
             std::cerr << "Method_name not recognized: " << method_name << std::endl;
             exit(2);
         }
+
         if (verbose > 0) {
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
             std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);

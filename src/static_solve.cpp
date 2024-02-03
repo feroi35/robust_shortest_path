@@ -28,6 +28,9 @@ void StaticMethod::solve(IloEnv& env, Instance& inst, const unsigned int& time_l
     retrieveCplexSolution(cplex, xValues, inst);
     xValues.end();
 
+    nodesExplored = cplex.getNnodes();
+    infBound = cplex.getBestObjValue();
+
     if (abs(inst.compute_static_score() - cplex.getObjValue()) > TOL) {
         throw std::domain_error("Not the same static objective value for instance " + inst.name);
     }

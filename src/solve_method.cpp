@@ -104,7 +104,7 @@ std::string get_path(std::vector<IloInt> solution, const Instance& inst){
 }
 
 
-void SolveMethod::add_static_constraints(IloEnv& env, IloModel& model, IloBoolVarArray& x, IloBoolVarArray& y, IloNumVar z, Instance& inst) {
+void SolveMethod::add_static_constraints(IloEnv& env, IloModel& model, IloBoolVarArray& x, IloBoolVarArray& y, IloNumVar z, const Instance& inst) const {
     // Flow conservation
     for (unsigned int i=0; i<inst.n; i++) {
         IloExpr out_arcs_i(env);
@@ -173,10 +173,10 @@ void SolveMethod::retrieveCplexSolution(const IloCplex& cplex, const IloNumArray
         }
     }
     inst.sol.push_back(inst.t);
-    nodesExplored = cplex.getNnodes();
 }
 
-void SolveMethod::parametrizeCplex(IloCplex& cplex, const unsigned int& time_limit, const int& verbose) {
+
+void SolveMethod::parametrizeCplex(IloCplex& cplex, const unsigned int& time_limit, const int& verbose) const {
     cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
     if (verbose < 2) cplex.setOut(cplex.getEnv().getNullStream());
 }
@@ -200,7 +200,7 @@ void SolveMethod::solve_and_display(IloEnv& env, Instance& inst, const unsigned 
         std::cout << inst.name << ","
             << method_name << ","
             << robust_score << ","
-            << static_cost << ","
+            << infBound << ","
             << static_cast<double>(time_span.count()) << ","
             << nodesExplored << ","
             << robust_constraint << ","

@@ -67,4 +67,7 @@ void BranchAndCutMethod::solve(IloEnv& env, Instance& inst, const unsigned int& 
     cplex.getValues(xValues, x);
     retrieveCplexSolution(cplex, xValues, inst);
     xValues.end();
+
+    nodesExplored = cplex.getNnodes();
+    infBound = cplex.getBestObjValue();
 }

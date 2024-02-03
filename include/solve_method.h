@@ -20,14 +20,17 @@ namespace Subproblems {
 }
 
 struct SolveMethod {
-    std::string method_name;
-    int nodesExplored = 0;
-    int nCallBacks = 0; // Branch and cut and plans coupants
-    double callBacksTimeSpan = 0.0; // Temps passé à résoudre des sous-problèmes
+    SolveMethod() {};
 
-    void add_static_constraints(IloEnv& env, IloModel& model, IloBoolVarArray& x, IloBoolVarArray& y, IloNumVar z, Instance& inst);
+    std::string method_name;
+    double infBound = 0.0;
+    int nodesExplored = 0;
+    int nCallBacks = 0;
+    double callBacksTimeSpan = 0.0;
+
+    void add_static_constraints(IloEnv& env, IloModel& model, IloBoolVarArray& x, IloBoolVarArray& y, IloNumVar z, const Instance& inst) const;
     void retrieveCplexSolution(const IloCplex& cplex, const IloNumArray& xValues, Instance& inst);
-    void parametrizeCplex(IloCplex& cplex, const unsigned int& time_limit, const int& verbose);
+    void parametrizeCplex(IloCplex& cplex, const unsigned int& time_limit, const int& verbose) const;
 
     virtual void solve(IloEnv& env, Instance& inst, const unsigned int& time_limit, const int& verbose) = 0;
     

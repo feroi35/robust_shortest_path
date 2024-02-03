@@ -118,6 +118,7 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
         }
         optimality = !violated_objective && !violated_constraint;
         nCallBacks++;
+        nodesExplored += cplex.getNnodes();
         spentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count()) / 1e6;
     }
 
@@ -130,4 +131,5 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
         xValues.end();
         yValues.end();
     }
+    infBound = cplex.getBestObjValue();
 }
