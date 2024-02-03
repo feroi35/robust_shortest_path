@@ -1,0 +1,5 @@
+instance,method,objective,lower_bound,time,nb_nodes,robust_constraint,static_objective,static_constraint,S,path,admissibility,nCallBacks,callBacksTimeSpan,
+data/processed/1000_USA-road-d.BAY.gr,dualized,48250,40117,61.0266,0,694,40117,516,978,1,0,0,[659;656;642;345;460;216;815;600;331;577;414;412;1000;994;698;965;993]
+data/processed/1000_USA-road-d.COL.gr,dualized,39440.6,28963,60.3066,0,835,28963,833,1086,1,0,0,[213;212;514;673;323;372;547;744;218;707;593;575;617;666]
+data/processed/1000_USA-road-d.NY.gr,dualized,43329,36723,60.5095,0,663,36723,661,767,1,0,0,[576;595;382;513;990;239;640;916;582;447;508;191;987;988;184;995;799;773;759;621]
+data/processed/100_USA-road-d.BAY.gr,dualized,10857.1,8818,1.88691,65,139,8818,122,144,1,0,0,[59;44;16;42;65;21;74]

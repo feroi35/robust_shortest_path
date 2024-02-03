@@ -10,6 +10,8 @@ ILOSTLBEGIN // macro to avoid incompatibility. Important to be before the other 
 #include <numeric>      // std::iota
 #include <algorithm>    // std::sort, std::stable_sort
 
+#define TOL 1e-3
+
 
 const double undefinedValue = std::numeric_limits<double>::quiet_NaN();
 

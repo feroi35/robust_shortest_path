@@ -1,7 +1,10 @@
 # file="data/processed/1200_USA-road-d.COL.gr"
 file="data/processed/20_USA-road-d.BAY.gr"
+# file="data/test/toy2.gr"
 
-method="static"
+# method="branch_and_cut"
+method="plans_coupants"
+# method="static"
 time_limit=600
 verbose=2
 

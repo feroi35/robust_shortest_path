@@ -7,7 +7,7 @@
         "request": "launch",
         "program": "${workspaceFolder}/myprogram_debug",
         // "args": ["data/processed/1300_USA-road-d.BAY.gr", "heuristics", "1"],
-        "args": ["data/test/toy.gr", "static", "300", "2"],
+        "args": ["data/test/toy2.gr", "plans_coupants", "300", "2"],
         "stopAtEntry": false,
         "cwd": "${workspaceFolder}",
         "environment": [
