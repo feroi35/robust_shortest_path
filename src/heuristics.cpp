@@ -460,8 +460,7 @@ std::vector<int> Heuristic_instance::astar_solve(const Instance& inst, const dou
     return sol;
 }
 
-void Heuristic_instance::complete_astar_solve(const Instance& inst, IloEnv env, const double& precision_K, const int& max_iter, const float& max_duration, const int& verbose) const{
-
+void Heuristic_instance::complete_astar_solve(Instance& inst, IloEnv env, const double& precision_K, const int& max_iter, const float& max_duration, const int& verbose) const{
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
     std::vector<int> sol_0 = astar_solve(inst, 0., verbose);
@@ -500,12 +499,19 @@ void Heuristic_instance::complete_astar_solve(const Instance& inst, IloEnv env, 
         }
         Solution_info retrieved_sol(inst, retrieved_feasible_sol, -1, start);
 
+        if (!inst.sol.empty()) {
+            std::cerr << "Warning: solution vector not empty for instance " << inst.name << std::endl;
+            inst.sol.clear();
+        }
         std::string path_str = "[";
         for (auto it = retrieved_sol.sol.begin(); it != retrieved_sol.sol.end(); ++it) {
             path_str += std::to_string(*it) + ";";
+            inst.sol.push_back(*it);
         }
         path_str += std::to_string(inst.t) + "]";
         std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start);
+
+
 
         std::cout << inst.name << ","
         << "heuristics,"
@@ -596,9 +602,14 @@ void Heuristic_instance::complete_astar_solve(const Instance& inst, IloEnv env, 
             std::cout << "robust constraint  = " << compute_robust_constraint(inst, sol) << " for S = " << inst.S << std::endl;
         }
 
+        if (!inst.sol.empty()) {
+            std::cerr << "Warning: solution vector not empty for instance " << inst.name << std::endl;
+            inst.sol.clear();
+        }
         std::string path_str = "[";
-        for (auto it = sol_sup.sol.begin(); it != sol_sup.sol.end(); ++it) {
+        for (auto it = sol_sup.sol.begin(); it != sol_sup.sol.end(); ++it){
             path_str += std::to_string(*it) + ";";
+            inst.sol.push_back(*it);
         }
         path_str += std::to_string(inst.t) + "]";
 

@@ -78,7 +78,7 @@ class Heuristic_instance{
         std::vector<IloInt> retrieve_feaible_sol_2(const Instance& inst, IloEnv env, const int& verbose) const;
 
         std::vector<int> astar_solve(const Instance& inst, const double& K, const int& verbose=0) const;
-        void complete_astar_solve(const Instance& inst,IloEnv env, const double& precision_K, const int& max_iter, const float& max_duration, const int& verbose=0) const;
+        void complete_astar_solve(Instance& inst,IloEnv env, const double& precision_K, const int& max_iter, const float& max_duration, const int& verbose=0) const;
 };
 
 #endif
