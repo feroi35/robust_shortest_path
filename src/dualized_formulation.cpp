@@ -59,4 +59,7 @@ void DualizedMethod::solve(IloEnv& env, Instance& inst, const unsigned int& time
     cplex.getValues(xValues, x);
     retrieveCplexSolution(cplex, xValues, inst);
     xValues.end();
+
+    nodesExplored = cplex.getNnodes();
+    infBound = cplex.getBestObjValue();
 }
