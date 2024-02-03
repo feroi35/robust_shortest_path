@@ -2,9 +2,14 @@
 #ifndef PLANS_COUPANTS_H
 #define PLANS_COUPANTS_H
 
-class Instance; // forward declaration
+#include "solve_method.h"
+class Instance;
 class IloEnv;
 
-void plans_coupants_solve(IloEnv env, Instance& inst, const unsigned int& time_limit=300, const int& verbose=0);
+
+struct PlansCoupantsMethod : public SolveMethod {
+    PlansCoupantsMethod() {method_name = "plans_coupants";}
+    void solve(IloEnv& env, Instance& inst, const unsigned int& time_limit, const int& verbose) override;
+};
 
 #endif

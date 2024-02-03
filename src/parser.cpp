@@ -132,18 +132,13 @@ double Instance::compute_static_score(const std::vector<IloInt>& solution) const
     if (current_node != s) {
         throw std::domain_error("First node of solution is not s");
     }
-    for (unsigned int i=1; i<solution.size(); i++) {
-        next_node = solution[i];
-        for (unsigned int a=0; a<n_arc; a++) {
-            if (mat[a].tail == current_node && mat[a].head == next_node) {
-                static_score += mat[a].d;
-                current_node = next_node;
-                break;
-            }
+    for (unsigned int k=0; k < solution.size()-1; k++) {
+        next_node = solution[k+1];
+        if (d[current_node-1][next_node-1] != d[current_node-1][next_node-1]) {
+            throw std::domain_error("Nan Value: no arc between " + std::to_string(current_node) + " and " + std::to_string(next_node));
         }
-        if (current_node != next_node) {
-            throw std::domain_error("No arc between " + std::to_string(current_node) + " and " + std::to_string(next_node));
-        }
+        static_score += d[current_node-1][next_node-1];
+        current_node = next_node;
     }
     if (current_node != t) {
         throw std::domain_error("Last node of solution is not t");
@@ -211,7 +206,7 @@ double Instance::compute_robust_score_milp(IloEnv env, const std::vector<IloInt>
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     if (verbose >= 2) {
-        std::cout << "MILP time to compute robust constraint: " << duration.count() << " microseconds" << std::endl;
+        std::cout << "(Time: " << duration.count() << " microseconds) ";
     }
     return cplex.getObjValue();
 }
@@ -269,7 +264,7 @@ double Instance::compute_robust_score_knapsack(const std::vector<IloInt>& soluti
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     if (verbose >= 2) {
-        std::cout << "Time to compute robust constraint: " << duration.count() << " microseconds" << std::endl;
+        std::cout << "(Time: " << duration.count() << " microseconds) ";
     }
     return static_score + robust_attack;
 }
@@ -329,7 +324,7 @@ double Instance::compute_robust_constraint_milp(IloEnv env, const std::vector<Il
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     if (verbose >= 2) {
-        std::cout << "MILP time to compute robust constraint: " << duration.count() << " microseconds" << std::endl;
+        std::cout << "(Time: " << duration.count() << " microseconds) ";
     }
     return cplex.getObjValue();
 }
@@ -371,7 +366,7 @@ double Instance::compute_robust_constraint_knapsack(const std::vector<IloInt>& s
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     if (verbose >= 2) {
-        std::cout << "Time to compute robust constraint: " << duration.count() << " microseconds" << std::endl;
+        std::cout << "(Time: " << duration.count() << " microseconds) ";
     }
     return static_constraint + robust_constraint;
 }

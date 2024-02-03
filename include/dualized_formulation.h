@@ -2,9 +2,14 @@
 #ifndef DUALIZED_FORMULATION_H
 #define DUALIZED_FORMULATION_H
 
-class Instance; // forward declaration
+#include "solve_method.h"
+class Instance;
 class IloEnv;
 
-void dualized_solve(IloEnv env, Instance& inst, const unsigned int& time_limit=300, const bool& reduce_symetry=false, const int& verbose=0);
+
+struct DualizedMethod : public SolveMethod {
+    DualizedMethod() {method_name = "dualized";}
+    void solve(IloEnv& env, Instance& inst, const unsigned int& time_limit, const bool& reduce_symetry, const int& verbose) override;
+};
 
 #endif

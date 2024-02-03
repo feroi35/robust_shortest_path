@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <numeric>
 
-class Instance; // forward declaration
+class Instance;
 class IloEnv;
 
 bool cmp_index_val(const std::tuple<int, float>& a, const std::tuple<int, float>& b);

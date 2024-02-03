@@ -9,7 +9,8 @@ repo_instances="data/retest_dualized"
 rm -f $GLOBAL_CSV
 
 # En-tête du fichier CSV global
-echo "instance,method,objective,lower_bound,time,nb_nodes,robust_constraint,static_objective,static_constraint,S,path" > $GLOBAL_CSV
+echo "instance,method,objective,lower_bound,time,nb_nodes,robust_constraint,static_objective,static_constraint,S,path,admissibility,nCallBacks,callBacksTimeSpan" > $GLOBAL_CSV
+
 
 make release
 
@@ -26,6 +27,7 @@ do
     # else
         #     break
     # fi
+
 done
 
 # make clean

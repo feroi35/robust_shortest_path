@@ -2,9 +2,13 @@
 #ifndef STATIC_SOLVE_H
 #define STATIC_SOLVE_H
 
-class Instance; // forward declaration
+#include "solve_method.h"
+class Instance;
 class IloEnv;
 
-void static_solve(IloEnv env, Instance& inst, const unsigned int& time_limit=60, const int& verbose=0);
+struct StaticMethod : public SolveMethod {
+    StaticMethod() {method_name = "static";}
+    void solve(IloEnv& env, Instance& inst, const unsigned int& time_limit, const int& verbose) override;
+};
 
 #endif

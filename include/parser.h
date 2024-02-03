@@ -12,6 +12,8 @@ ILOSTLBEGIN // macro to avoid incompatibility. Important to be before the other 
 #include <algorithm>    // std::sort, std::stable_sort
 // #include <bits/stdc++.h> //for map?
 
+#define TOL 1e-3
+
 
 const double undefinedValue = std::numeric_limits<double>::quiet_NaN();
 

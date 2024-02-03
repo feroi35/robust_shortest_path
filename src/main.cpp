@@ -11,11 +11,11 @@
 
 int main(int argc, char **argv) {
     if (argc < 3) {
-        std::cerr << "Usage: " << argv[0] << " <filename>" << "method" << "(time_limit)" << "(verbose)" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <filename>" << "method_name" << "(time_limit)" << "(verbose)" << std::endl;
         exit(1);
     }
     char* filename = argv[1];
-    char* method = argv[2];
+    char* method_name = argv[2];
     unsigned int time_limit = 60;
     if (argc > 3) {
         time_limit = atoi(argv[3]);
@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
     try {
-        if (strcmp(method, "heuristics") == 0) {
+        if (strcmp(method_name, "heuristics") == 0) {
             Heuristic_instance heur(instance);
             heur.inf_dist = heur.backward_dijkstra_distance(instance);
             heur.inf_dist_nodes = heur.backward_dijkstra_nodes(instance);
@@ -41,18 +41,21 @@ int main(int argc, char **argv) {
             double precision_K = 0.00001;
             heur.complete_astar_solve(instance, env, precision_K, 2000, 20, verbose);
         }
-        else if(strcmp(method, "static") == 0) {
-            static_solve(env, instance, time_limit, verbose);
-        } else if (strcmp(method, "dualized") == 0) {
-            dualized_solve(env, instance, time_limit, false, verbose);
-            // dualized_solve(env, instance, time_limit, true, verbose);
-        } else if (strcmp(method, "branch_and_cut") == 0) {
-            branch_and_cut_solve(env, instance, time_limit, verbose);
-        } else if (strcmp(method, "plans_coupants") == 0) {
-            plans_coupants_solve(env, instance, time_limit, verbose);
+        else if(strcmp(method_name, "static") == 0) {
+            StaticMethod method;
+            method.solve_and_display(env, instance, time_limit, verbose);
+        } else if (strcmp(method_name, "dualized") == 0) {
+            DualizedMethod method;
+            method.solve_and_display(env, instance, time_limit, false, verbose);
+        } else if (strcmp(method_name, "branch_and_cut") == 0) {
+            BranchAndCutMethod method;
+            method.solve_and_display(env, instance, time_limit, verbose);
+        } else if (strcmp(method_name, "plans_coupants") == 0) {
+            PlansCoupantsMethod method;
+            method.solve_and_display(env, instance, time_limit, verbose);
         } else {
-            std::cerr << "Method not recognized: " << method << std::endl;
-            exit(1);
+            std::cerr << "Method_name not recognized: " << method_name << std::endl;
+            exit(2);
         }
         if (verbose > 0) {
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
@@ -72,8 +75,8 @@ int main(int argc, char **argv) {
         std::cerr << "Ilo exception caught: " << e << std::endl;
     } catch (std::domain_error& e) {
         std::cerr << "Domain error caught: " << e.what() << std::endl;
-    } catch (...) {
-        std::cerr << "Unknown exception caught" << std::endl;
+    } catch (std::exception& e) {
+        std::cerr << "Other exception caught: " << e.what() << std::endl;
     }
 
     env.end();
