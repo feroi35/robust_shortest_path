@@ -1,13 +1,14 @@
 
-file="data/processed/1000_USA-road-d.COL.gr"
-# file="data/processed/20_USA-road-d.BAY.gr"
+# file="data/processed/20_USA-road-d.COL.gr"
+file="data/processed/2000_USA-road-d.BAY.gr"
 # file="data/retest_dualized/1100_USA-road-d.BAY.gr"
+# file="data/test/toy_symetries_removal.gr"
 
-method="dualized"
-time_limit=500
+method="branch_and_cut"
+time_limit=300
 
 
-verbose=2
+verbose=0
 
 make release
 

@@ -63,6 +63,11 @@ Instance::Instance(IloEnv env, char filename[]) {
     map_mat = map_mat_;
     n_arc = mat.size();
 
+    pair_nodes = std::vector<std::vector<bool>>(n, std::vector<bool>(n, false));
+    for(unsigned int i=0; i<n; i++){
+        pair_nodes[i][i] = true;
+    }
+
     std::vector<std::vector<int>> neighbors(n, std::vector<int>());
     std::vector<std::vector<int>> reverse_neighbors(n, std::vector<int>());
     for (unsigned int a=0; a<n_arc; a++) {
@@ -375,7 +380,7 @@ double Instance::compute_robust_constraint_knapsack(const std::vector<IloInt>& s
 
 std::vector<std::vector<int>> arcs_to_forbid(const Instance& inst, const int& i, const int& j){
     // return a vector where each element is a path that shouldn't be use to reduce symetry, ie there exist an exactly similar path
-    // the format is node_i, node_j, index_arc_i_k, index_arc_k_j where (ik)+(kj) is the path that shouldn't be used, and the index is the index
+    // the format is index_node_i, index_node_j, index_arc_i_k, index_arc_k_j where (ik)+(kj) is the path that shouldn't be used, and the index is the index
     // of the arc in instance.mat
     std::vector<tuple<Arc2,Arc2,float,float>> sub_paths; //Arc2 are arcs but with int and a constructor
 

@@ -1,3 +1,5 @@
-instance,method,objective,lower_bound,time,nb_nodes,robust_constraint,static_objective,static_constraint,S,path
-data/retest_dualized/1100_USA-road-d.BAY.gr,dualized,70226.3,70226.3,107.248,11466,428,58490,368,429,[820;616;541;1053;316;758;791;457;559;424;926;989;859;718;975;786;990;890;1038;1082;1099]
-data/retest_dualized/1100_USA-road-d.COL.gr,dualized,42766.5,37432,1200.11,14010,725,34075,681,737,[88;189;213;1045;952;112;747;793;111;61;1056;1030;696;529;1053]
+instance,method,objective,lower_bound,time,nb_nodes,robust_constraint,static_objective,static_constraint,S,path,admissibility,nCallBacks,callBacksTimeSpan
+data/retest_dualized/1100_USA-road-d.BAY.gr,dualized,70226.3,70226.3,266.166,9176,428,58490,368,429,[820;910;541;1053;316;758;658;457;559;424;926;1045;859;454;975;786;990;890;1038;1082;1099],1,0,0
+data/retest_dualized/1100_USA-road-d.COL.gr,dualized,42766.5,37393.1,1200.48,11678,726,34075,681,737,[88;189;1033;467;904;568;484;628;787;185;383;1030;696;529;1053],1,0,0
+data/retest_dualized/1100_USA-road-d.NY.gr,dualized,70089.2,69941.8,1200.17,293737,489,57273,359,492,[621;646;1028;348;996;840;1096;1017;1093;507;866;697;585;447;696;360;324;960;1016;578;1095;1066],1,0,0
+data/retest_dualized/1200_USA-road-d.COL.gr,dualized,42766.5,37150.7,1200.45,8291,797,34075,734,799,[88;189;213;518;687;967;406;359;210;1004;150;945;554;529;1053],1,0,0

@@ -3,7 +3,7 @@
 
 
 ILOLAZYCONSTRAINTCALLBACK7(myCallBack, const IloBoolVarArray&, x, const IloBoolVarArray&, y,
-        const IloNumVar&, z, const Instance&, inst, const unsigned int&, verbose, int&, nIteration,
+        const IloNumVar&, z, Instance&, inst, const unsigned int&, verbose, int&, nIteration,
         double&, spentTime) {
     nIteration++;
     if (verbose > 0) std::cout << "Lazy constraint callback, it " << nIteration << std::endl;
@@ -29,6 +29,38 @@ ILOLAZYCONSTRAINTCALLBACK7(myCallBack, const IloBoolVarArray&, x, const IloBoolV
         add(exprConstraint <= inst.S);
     }
     exprConstraint.end();
+
+    std::vector<IloInt> sol;
+    unsigned int current_node = inst.s-1;
+    while (current_node != inst.t-1) {
+        sol.push_back(current_node+1);
+        for (unsigned int a=0; a<inst.n_arc; a++) {
+            if (inst.mat[a].tail == current_node+1 && xValues[a] >= 1 - TOL) {
+                current_node = inst.mat[a].head-1;
+                break;
+            }
+        }
+        if (current_node == sol[inst.sol.size()-1]-1) {
+            throw std::domain_error("Using arc that does not exist for instance " + inst.name);
+        }
+    }
+    sol.push_back(inst.t);
+
+    for (unsigned int i=0; i<sol.size()-2;i++){
+        if(inst.pair_nodes[sol[i]-1][sol[i+2]-1]){
+            continue; //already explored possible subpath
+        }
+        inst.pair_nodes[sol[i]-1][sol[i+2]-1] = true;
+        int node_i = (int) sol[i]-1;
+        int node_j = (int) sol[i+2]-1;
+        std::vector<std::vector<int>> to_forbid = arcs_to_forbid(inst, node_i, node_j);
+        for (unsigned int k=0; k<to_forbid.size(); k++) {
+            if(to_forbid[k][2] == to_forbid[k][3]){
+                std::cerr << "Arc to forbid loop on arc " << to_forbid[k][3] << " for node " << to_forbid[k][0] << "and node " << to_forbid[k][1] << endl;
+            }
+            add(x[to_forbid[k][2]] + x[to_forbid[k][3]] <= 1);
+        }
+    }
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);

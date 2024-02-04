@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
             method.solve_and_display(env, instance, time_limit, verbose);
         } else if (strcmp(method_name, "branch_and_cut") == 0) {
             BranchAndCutMethod method;
+            method.solve_and_display(env, instance, time_limit, verbose);
         } else if (strcmp(method_name, "plans_coupants") == 0) {
             PlansCoupantsMethod method;
             method.solve_and_display(env, instance, time_limit, verbose);

@@ -148,6 +148,7 @@ std::vector<IloInt> HeuristicMethod::retrieve_feasible_sol(const Instance& inst)
         current_node = predecessors[current_node];
         sol.push_back(current_node+1);
     }
+    std::reverse(sol.begin(), sol.end());
     return sol;
 }
 

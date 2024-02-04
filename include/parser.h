@@ -63,6 +63,8 @@ struct Instance {
     std::vector<std::vector<int>> neighbors_list;
     std::vector<std::vector<int>> reverse_neighbors_list;
 
+    std::vector<std::vector<bool>> pair_nodes; // pour stocker les sous-chemins déjà explorés
+
     std::vector<IloInt> sol; // liste des villes visitées dans l'ordre
 
     Instance(){};
