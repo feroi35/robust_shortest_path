@@ -163,7 +163,7 @@ void SolveMethod::retrieveCplexSolution(const IloCplex& cplex, const IloNumArray
     while (current_node != inst.t-1) {
         inst.sol.push_back(current_node+1);
         for (unsigned int a=0; a<inst.n_arc; a++) {
-            if (inst.mat[a].tail == current_node+1 && xValues[a] == 1) {
+            if (inst.mat[a].tail == current_node+1 && xValues[a] >= 1 - TOL) {
                 current_node = inst.mat[a].head-1;
                 break;
             }
@@ -178,7 +178,7 @@ void SolveMethod::retrieveCplexSolution(const IloCplex& cplex, const IloNumArray
 
 void SolveMethod::parametrizeCplex(IloCplex& cplex, const unsigned int& time_limit, const int& verbose) const {
     cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
-    cplex.setParam(IloCplex::Param::MIP::Tolerances::MIPGap, 0.0000001);
+    cplex.setParam(IloCplex::Param::MIP::Tolerances::MIPGap, 1e-7);
     if (verbose < 2) cplex.setOut(cplex.getEnv().getNullStream());
 }
 
@@ -214,15 +214,15 @@ void SolveMethod::solve_and_display(IloEnv& env, Instance& inst, const unsigned 
             << callBacksTimeSpan << std::endl;
     }
     catch (IloException& e) {
-        std::cout << inst.name << "," << method_name << "," << ",,,,,,,," << std::endl;
+        std::cout << inst.name << "," << method_name << "," << ",,,,,,,,,,," << std::endl;
         throw e;
     }
     catch (std::domain_error& e) {
-        std::cout << inst.name << "," << method_name << "," << ",,,,,,,," << std::endl;
+        std::cout << inst.name << "," << method_name << "," << ",,,,,,,,,,," << std::endl;
         throw e;
     }
     catch (std::exception& e) {
-        std::cout << inst.name << "," << method_name << "," << ",,,,,,,," << std::endl;
+        std::cout << inst.name << "," << method_name << "," << ",,,,,,,,,,," << std::endl;
         throw e;
     }
 }

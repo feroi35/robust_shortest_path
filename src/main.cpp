@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
             double precision_K = 1e-5;
             int max_iter = 2000;
             float max_duration = 20.0;
-            HeuristicMethod method(instance, precision_K, max_iter, max_duration);
+            HeuristicMethod method(precision_K, max_iter, max_duration);
             method.solve_and_display(env, instance, time_limit, verbose);
         }
         else if(strcmp(method_name, "static") == 0) {

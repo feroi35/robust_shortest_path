@@ -6,16 +6,6 @@ bool cmp_index_val(const std::tuple<int, float>& a, const std::tuple<int, float>
 bool cmp_dij(const std::tuple<float, float>& a, const std::tuple<float, float>& b) {return std::get<0>(a) > std::get<0>(b);}
 
 
-HeuristicMethod::HeuristicMethod(const Instance& inst, const double& precision_K_, const int& max_iter_, const float& max_duration_) {
-    method_name = "heuristic";
-    precision_K = precision_K_;
-    max_iter = max_iter_;
-    max_duration = max_duration_;
-    inf_dist = std::vector<float>(inst.n, pow(10, 8));
-    inf_dist_nodes = std::vector<float>(inst.n, pow(10, 8));
-}
-
-
 void HeuristicMethod::solve(IloEnv& env, Instance& inst, const unsigned int& time_limit, const int& verbose) {
     inf_dist = backward_dijkstra_distance(inst);
     inf_dist_nodes = backward_dijkstra_nodes(inst);
@@ -64,8 +54,8 @@ std::vector<float> HeuristicMethod::backward_dijkstra_distance(const Instance& i
 
 
 std::vector<float> HeuristicMethod::backward_dijkstra_nodes(const Instance& inst) const{
-    // renvoie le poids non robuste minimale  du chemin restant pour arriver a t
-    // en particulier le poids restant ne prends pas en compte le poids du noeud courant
+    // renvoie le poids non robuste minimal du chemin restant pour arriver a t
+    // en particulier le poids restant ne prend pas en compte le poids du noeud courant
     std::vector<float> dist_nodes(inst.n, pow(10, 8));
     std::vector<bool> visited(inst.n, false);
     std::vector<std::tuple<int, float>> to_visit;
@@ -104,6 +94,8 @@ std::vector<float> HeuristicMethod::backward_dijkstra_nodes(const Instance& inst
 
 
 std::vector<IloInt> HeuristicMethod::retrieve_feasible_sol(const Instance& inst) const{
+    // Qu'est ce que ça fait ?? 
+    // Utilité de garder cette méthode ?
     std::vector<float> dist_nodes(inst.n, pow(10, 8));
     std::vector<int> predecessors(inst.n, -1);
     std::vector<bool> visited(inst.n, false);
@@ -144,7 +136,7 @@ std::vector<IloInt> HeuristicMethod::retrieve_feasible_sol(const Instance& inst)
     std::vector<IloInt> sol;
     int current_node = inst.t-1;
     sol.push_back(current_node+1);
-    while(current_node != inst.s-1){
+    while(current_node != inst.s-1) {
         current_node = predecessors[current_node];
         sol.push_back(current_node+1);
     }
@@ -153,7 +145,9 @@ std::vector<IloInt> HeuristicMethod::retrieve_feasible_sol(const Instance& inst)
 }
 
 
-std::vector<IloInt> HeuristicMethod::retrieve_feasible_sol_2(const Instance& inst, IloEnv& env, const int& verbose) const {
+std::vector<IloInt> HeuristicMethod::retrieve_feasible_sol_2(const Instance& inst, IloEnv& env, const int& verbose) {
+    // Looks a lot like dualized method but with a relaxed objective
+    // There is no more proof of optimality but it gives a feasible solution
     IloModel model(env);
 
     // Variables
@@ -177,47 +171,50 @@ std::vector<IloInt> HeuristicMethod::retrieve_feasible_sol_2(const Instance& ins
     // Solve
     IloCplex cplex(model);
     parametrizeCplex(cplex, 300, verbose);
-
     cplex.solve();
 
     if (cplex.getStatus() == IloAlgorithm::Infeasible) {
-        std::cout << inst.name << "," << "retrieval,,,,,,,,,,,," << std::endl;
         throw std::domain_error("Infeasible heuristic retrieval model for instance " + inst.name);
     } else if (cplex.getStatus() == IloAlgorithm::Unknown) {
-        std::cout << inst.name << "," << "retrieval,,,,,,,,,,,," << std::endl;
-        throw std::domain_error("No solution found for instance " + inst.name + ". Maybe not enough time");
+        throw std::domain_error("No solution found for heuristic retrieval model for instance "
+            + inst.name + ". Maybe not enough time");
     }
 
     std::vector<IloInt> sol;
     unsigned int current_node = inst.s-1;
+
+    IloNumArray xValues(env);
+    cplex.getValues(xValues, x);
     while (current_node != inst.t-1) {
         sol.push_back(current_node+1);
         for (unsigned int a=0; a<inst.n_arc; a++) {
-            if (inst.mat[a].tail == current_node+1 && cplex.getValue(x[a]) == 1) {
+            if (inst.mat[a].tail == current_node+1 && xValues[a] >= 1 - TOL) {
                 current_node = inst.mat[a].head-1;
                 break;
             }
         }
         if (current_node == sol[sol.size()-1]-1) {
-            std::cout << inst.name << "," << "retrieval,,,,,,,,,,,," << std::endl;
             throw std::domain_error("Using arc that does not exist for instance " + inst.name);
         }
     }
     sol.push_back(inst.t);
+    infBound = cplex.getObjValue();
     return sol;
 }
 
 
 std::vector<IloInt> HeuristicMethod::astar_solve(const Instance& inst, const double& K, const int& verbose) const {
     std::vector<IloInt> sol;
-    std::vector<float>* dist = new std::vector<float>(inst.n, pow(10, 8));
-    std::vector<float>* dist_star = new std::vector<float>(inst.n, pow(10, 8));
-    std::vector<NodesInfo>* NodesInfos = new std::vector<NodesInfo>(inst.n);
     std::vector<bool> visited(inst.n, false);
     std::vector<std::tuple<int, float>> to_visit;
-    (*NodesInfos)[inst.s-1] = NodesInfo(inst.s-1, -1, 0, 0, inst.p[inst.s-1], 0, std::vector<std::tuple<float,float>>(), std::vector<float>());
-    (*NodesInfos)[inst.s-1].redo_knapsack_phi(inst, inst.s-1);
-    (*dist)[inst.s-1] = (*NodesInfos)[inst.s-1].compute_tot_dist(K);
+    std::vector<float>* dist = new std::vector<float>(inst.n, pow(10, 8));
+    std::vector<float>* dist_star = new std::vector<float>(inst.n, pow(10, 8));
+    std::vector<NodesInfo>* nodesInfos = new std::vector<NodesInfo>(inst.n);
+
+    (*nodesInfos)[inst.s-1] = NodesInfo(inst.s-1, -1, 0, 0, inst.p[inst.s-1], 0,
+        std::vector<std::tuple<float,float>>(),std::vector<float>());
+    (*nodesInfos)[inst.s-1].redo_knapsack_phi(inst, inst.s-1);
+    (*dist)[inst.s-1] = (*nodesInfos)[inst.s-1].compute_tot_dist(K);
     (*dist_star)[inst.s-1] = (*dist)[inst.s-1] + (inf_dist[inst.s-1] + K*inf_dist_nodes[inst.s-1]);
     to_visit.emplace_back(inst.s-1, (*dist_star)[inst.s-1]);
     std::make_heap(to_visit.begin(), to_visit.end(), cmp_index_val);
@@ -230,31 +227,38 @@ std::vector<IloInt> HeuristicMethod::astar_solve(const Instance& inst, const dou
             int j = inst.neighbors_list[i][k];
             if (!visited[j]) {
                 if ((*dist)[j] == pow(10, 8)) {
-                    (*NodesInfos)[j] = NodesInfo(j, i, (*NodesInfos)[i].dist+inst.d[i][j], (*NodesInfos)[i].robust_dist, (*NodesInfos)[i].dist_nodes+inst.p[j], (*NodesInfos)[i].robust_dist_nodes, (*NodesInfos)[i].knapsack_dij, (*NodesInfos)[i].knapsack_phi);
-                    if(!(*NodesInfos)[j].is_knapsack_dij_full(inst.d1) || inst.d[i][j] > std::get<0>((*NodesInfos)[j].knapsack_dij.back())){
-                        (*NodesInfos)[j].redo_knapsack_dij(inst, j);
+                    (*nodesInfos)[j] = NodesInfo(j, i, (*nodesInfos)[i].dist+inst.d[i][j], (*nodesInfos)[i].robust_dist,
+                                                (*nodesInfos)[i].dist_nodes+inst.p[j], (*nodesInfos)[i].robust_dist_nodes,
+                                                (*nodesInfos)[i].knapsack_dij, (*nodesInfos)[i].knapsack_phi);
+                    if (!(*nodesInfos)[j].is_knapsack_dij_full(inst.d1) ||
+                            inst.d[i][j] > std::get<0>((*nodesInfos)[j].knapsack_dij.back())) {
+                        (*nodesInfos)[j].redo_knapsack_dij(inst, j);
                     }
-                    if(!(*NodesInfos)[j].is_knapsack_phi_full(inst.d2) || inst.p[i] > (*NodesInfos)[j].knapsack_phi.back()){
-                        (*NodesInfos)[j].redo_knapsack_phi(inst, j);
+                    if(!(*nodesInfos)[j].is_knapsack_phi_full(inst.d2) || inst.p[i] > (*nodesInfos)[j].knapsack_phi.back()) {
+                        (*nodesInfos)[j].redo_knapsack_phi(inst, j);
                     }
 
-                    (*dist)[j] = (*NodesInfos)[j].compute_tot_dist(K);
+                    (*dist)[j] = (*nodesInfos)[j].compute_tot_dist(K);
                     (*dist_star)[j] = (*dist)[j] + (inf_dist[j] + K*inf_dist_nodes[j]);
 
                     to_visit.emplace_back(j, (*dist_star)[j]);
                     std::push_heap(to_visit.begin(), to_visit.end(), cmp_index_val);
                 }
-                else{
-                    NodesInfo new_NodesInfo =  NodesInfo(j, i, (*NodesInfos)[i].dist+inst.d[i][j], (*NodesInfos)[i].robust_dist, (*NodesInfos)[i].dist_nodes+inst.p[i], (*NodesInfos)[i].robust_dist_nodes, (*NodesInfos)[i].knapsack_dij, (*NodesInfos)[i].knapsack_phi);
-                    if(!(*NodesInfos)[j].is_knapsack_dij_full(inst.d1) || inst.d[i][j] > std::get<0>((*NodesInfos)[j].knapsack_dij.back())){
-                        (*NodesInfos)[j].redo_knapsack_dij(inst, j);
+                else {
+                    NodesInfo new_NodesInfo =  NodesInfo(j, i, (*nodesInfos)[i].dist+inst.d[i][j],
+                                                        (*nodesInfos)[i].robust_dist, (*nodesInfos)[i].dist_nodes+inst.p[i],
+                                                        (*nodesInfos)[i].robust_dist_nodes, (*nodesInfos)[i].knapsack_dij,
+                                                        (*nodesInfos)[i].knapsack_phi);
+                    if (!(*nodesInfos)[j].is_knapsack_dij_full(inst.d1) ||
+                            inst.d[i][j] > std::get<0>((*nodesInfos)[j].knapsack_dij.back())) {
+                        (*nodesInfos)[j].redo_knapsack_dij(inst, j);
                     }
-                    if(!(*NodesInfos)[j].is_knapsack_phi_full(inst.d2) || inst.p[i] > (*NodesInfos)[j].knapsack_phi.back()){
-                        (*NodesInfos)[j].redo_knapsack_phi(inst, j);
+                    if (!(*nodesInfos)[j].is_knapsack_phi_full(inst.d2) || inst.p[i] > (*nodesInfos)[j].knapsack_phi.back()) {
+                        (*nodesInfos)[j].redo_knapsack_phi(inst, j);
                     }
                     float new_dist = new_NodesInfo.compute_tot_dist(K);
-                    if (new_dist < (*dist)[j]){
-                        (*NodesInfos)[j] = new_NodesInfo;
+                    if (new_dist < (*dist)[j]) {
+                        (*nodesInfos)[j] = new_NodesInfo;
                         (*dist)[j] = new_dist;
                         (*dist_star)[j] = (*dist)[j] + (inf_dist[j] + K*inf_dist_nodes[j]);
                         // replace value of tuple of first value j
@@ -273,29 +277,34 @@ std::vector<IloInt> HeuristicMethod::astar_solve(const Instance& inst, const dou
     }
     int current_node = inst.t-1;
     sol.push_back(current_node+1);
-    while(current_node != inst.s-1){
-        current_node = (*NodesInfos)[current_node].parent;
+    while(current_node != inst.s-1) {
+        current_node = (*nodesInfos)[current_node].parent;
         sol.push_back(current_node+1);
     }
     std::reverse(sol.begin(), sol.end());
+
+    // Free memory
+    delete dist;
+    delete dist_star;
+    delete nodesInfos;
     return sol;
 }
 
 
-void HeuristicMethod::complete_astar_solve(Instance& inst, IloEnv& env, const double& precision_K, const int& max_iter, const float& max_duration, const int& verbose) const{
+void HeuristicMethod::complete_astar_solve(Instance& inst, IloEnv& env, const double& precision_K,
+        const int& max_iter, const float& max_duration, const int& verbose) {
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
-    std::vector<IloInt> sol_0 = astar_solve(inst, 0., verbose);
-    SolutionInfo sol_inf(inst, sol_0, 0, start);
-
-    std::vector<IloInt> sol_1 = astar_solve(inst, 1., verbose);
-    SolutionInfo sol_sup(inst, sol_1, 1., start);
-
-    double sup_K = 1.;
+    // Looking for a feasible solution to start the dichotomy
     double inf_K = 0.;
+    double sup_K = 1.;
+    std::vector<IloInt> sol_inf_ = astar_solve(inst, inf_K, verbose);
+    std::vector<IloInt> sol_sup_ = astar_solve(inst, sup_K, verbose);
+    SolutionInfo sol_inf(inst, sol_inf_, inf_K, start);
+    SolutionInfo sol_sup(inst, sol_sup_, sup_K, start);
     int counter_iter_init = 0;
-
     while (sol_sup.robust_constraint > inst.S && counter_iter_init < 20) {
+        // Increasing the weight of the robust constraint until a feasible solution is found
         sup_K *= 2;
         std::vector<IloInt> sol_K = astar_solve(inst, sup_K, verbose);
         SolutionInfo new_sol_sup(inst, sol_K, sup_K, start);
@@ -304,19 +313,25 @@ void HeuristicMethod::complete_astar_solve(Instance& inst, IloEnv& env, const do
     }
 
     if (counter_iter_init == 20) {
-        if (verbose>0) std::cout << "initialisation of K took too much iter " << counter_iter_init << "/" << 20 << std::endl;
+        // The solution is not feasible
+        if (verbose > 0) {
+            std::cout << "Initialization of K took too much iterations" << std::endl;
+            std::cout << "Trying first other method to get admissible solution" << std::endl;
+        }
         std::vector<IloInt> retrieved_feasible_sol = retrieve_feasible_sol(inst);
-        // Error. First node of solution is not s
-
         if (inst.compute_robust_constraint_knapsack(retrieved_feasible_sol) > inst.S) {
+            // The solution is still not feasible
+            if (verbose > 0) {
+                std::cout << "Trying second other method to get admissible solution" << std::endl;
+            }
             retrieved_feasible_sol.clear();
             std::vector<IloInt> retrieved_feasible_sol_2 = retrieve_feasible_sol_2(inst, env, verbose);
             for (unsigned int i=0; i<retrieved_feasible_sol_2.size(); i++) {
                 retrieved_feasible_sol.push_back(retrieved_feasible_sol_2[i]);
             }
         }
-        SolutionInfo retrieved_sol(inst, retrieved_feasible_sol, -1, start);
 
+        SolutionInfo retrieved_sol(inst, retrieved_feasible_sol, -1, start);
         if (!inst.sol.empty()) {
             std::cerr << "Warning: solution vector not empty for instance " << inst.name << std::endl;
             inst.sol.clear();
@@ -327,12 +342,16 @@ void HeuristicMethod::complete_astar_solve(Instance& inst, IloEnv& env, const do
         return;
     }
 
-    std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start);
+    // A feasible solution has been found, now we can start the dichotomy
+    std::chrono::microseconds duration =  std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start);
     int iter = 0;
-
-    while ((static_cast<double>(duration.count()) / 1e6) < max_duration && sup_K-inf_K > precision_K && iter<max_iter){
+    while ((static_cast<double>(duration.count()) / 1e6) < max_duration && sup_K-inf_K > precision_K
+            && iter<max_iter && sol_inf.robust_score!=sol_sup.robust_score) {
         if (sol_inf.robust_score == sol_sup.robust_score)  break;
-        if (verbose>1) std::cout << "iter = " << iter << ", Time spent in dichotomy = " << (static_cast<double>(duration.count()) / 1e6) << ", inf_K = " << std::to_string(inf_K) << ", sup_K =" << std::to_string(sup_K) << endl;
+        if (verbose>1) {
+            std::cout << "iter = " << iter << ", Time spent in dichotomy = " << (static_cast<double>(duration.count()) / 1e6)
+            << ", inf_K = " << std::to_string(inf_K) << ", sup_K =" << std::to_string(sup_K) << endl;
+        }
 
         double new_K = (sup_K+inf_K)/2;
         std::vector<IloInt> new_solu_K = astar_solve(inst, new_K, verbose);
@@ -341,8 +360,7 @@ void HeuristicMethod::complete_astar_solve(Instance& inst, IloEnv& env, const do
         if (new_sol.robust_constraint > inst.S) {
             sol_inf = new_sol;
             inf_K = new_K;
-        }
-        else {
+        } else {
             sol_sup = new_sol;
             sup_K = new_K;
         }
@@ -364,7 +382,7 @@ void HeuristicMethod::complete_astar_solve(Instance& inst, IloEnv& env, const do
         }
         std::cout << std::endl;
 
-        if ((static_cast<double>(duration.count()) / 1e6) > max_duration){
+        if ((static_cast<double>(duration.count()) / 1e6) > max_duration) {
             std::cout << "ended because of duration after " << (static_cast<double>(duration.count()) / 1e6) << " s " << std::endl;
         }
         if (iter == max_iter) {
@@ -403,27 +421,26 @@ void HeuristicMethod::complete_astar_solve(Instance& inst, IloEnv& env, const do
         std::cerr << "Warning: solution vector not empty for instance " << inst.name << std::endl;
         inst.sol.clear();
     }
-    for (auto it = sol_sup.sol.begin(); it != sol_sup.sol.end(); ++it){
+    for (auto it = sol_sup.sol.begin(); it != sol_sup.sol.end(); ++it) {
         inst.sol.push_back(*it);
     }
 }
 
 
-
-float NodesInfo::sum_knapsack_capa() const{
+float NodesInfo::sum_knapsack_capa() const {
     float sum = 0;
-    for(auto it = knapsack_dij.begin(); it != knapsack_dij.end(); ++it){
+    for (auto it = knapsack_dij.begin(); it != knapsack_dij.end(); ++it) {
         sum += std::get<1>(*it);
     }
     return sum;
 }
 
 
-void NodesInfo::compute_dist_robust(const float d1){
+void NodesInfo::compute_dist_robust(const float d1) {
     float sum = 0;
     float weight = 0;
-    for(auto it = knapsack_dij.begin(); it != knapsack_dij.end(); ++it){
-        if (weight + std::get<1>(*it) <= d1){
+    for (auto it = knapsack_dij.begin(); it != knapsack_dij.end(); ++it) {
+        if (weight + std::get<1>(*it) <= d1) {
             sum += std::get<0>(*it)*std::get<1>(*it);
             weight += std::get<1>(*it);
         }
@@ -436,15 +453,14 @@ void NodesInfo::compute_dist_robust(const float d1){
 }
 
 
-void NodesInfo::compute_nodes_robust(const float d2){
+void NodesInfo::compute_nodes_robust(const float d2) {
     float sum = 0;
     float weight = 0;
-    for(auto it = knapsack_phi.begin(); it != knapsack_phi.end(); ++it){
-        if (weight + 2 <= d2){
+    for (auto it = knapsack_phi.begin(); it != knapsack_phi.end(); ++it) {
+        if (weight + 2 <= d2) {
             sum += 2*(*it);
             weight += 2;
-        }
-        else{
+        } else {
             sum += (*it)*(d2-weight);
             break;
         }
@@ -460,7 +476,7 @@ void NodesInfo::redo_knapsack_dij(const Instance& inst, const int& new_node) {
     knapsack_dij.push_back(std::make_tuple(new_dij, new_Dij));
     std::sort(knapsack_dij.begin(), knapsack_dij.end(), cmp_dij);
     float sum_knapsack = sum_knapsack_capa();
-    while(sum_knapsack-std::get<1>(knapsack_dij.back()) >= inst.d1){
+    while(sum_knapsack-std::get<1>(knapsack_dij.back()) >= inst.d1) {
         std::tuple<float,float> last = knapsack_dij.back();
         knapsack_dij.pop_back();
         sum_knapsack -= std::get<1>(last);
@@ -469,7 +485,7 @@ void NodesInfo::redo_knapsack_dij(const Instance& inst, const int& new_node) {
 }
 
 
-void NodesInfo::redo_knapsack_phi(const Instance& inst, const int& new_node){
+void NodesInfo::redo_knapsack_phi(const Instance& inst, const int& new_node) {
     float new_phi = inst.ph[new_node];
     knapsack_phi.push_back(new_phi);
     std::sort(knapsack_phi.begin(), knapsack_phi.end(), std::greater<float>());
@@ -482,7 +498,7 @@ void NodesInfo::redo_knapsack_phi(const Instance& inst, const int& new_node){
 }
 
 
-SolutionInfo::SolutionInfo(const Instance& inst, const std::vector<IloInt>& solu, const double& K_, const std::chrono::steady_clock::time_point& start){
+SolutionInfo::SolutionInfo(const Instance& inst, const std::vector<IloInt>& solu, const double& K_, const std::chrono::steady_clock::time_point& start) {
     sol = solu;
     K = K_;
     time_obtained = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start);
