@@ -397,3 +397,6 @@ Rien compris. Je n'arrive pas à savoir si c'est possible. Beaucoup de sources c
 **Ilo exception caught: MultipleObjException: IloCplex can not handle multiple objectives**
 
 On va dire que ce n'est pas possible alors que le site de CPLEX semble dire que c'est possible, y compris pour les MILP...
+
+# 3.02
+test de arc_removal pour réduire les symétrie en preprocess: on contraint pour pas utiliser certains sous chemin si il existe un autre sous chemin identique. A priori rajoute trop de contraintes ca ralentit le calcul.
