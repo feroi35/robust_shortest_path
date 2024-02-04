@@ -3,7 +3,7 @@
 
 
 
-void DualizedMethod::solve(IloEnv& env, Instance& inst, const unsigned int& time_limit,const bool& reduce_symetry, const int& verbose) {
+void DualizedMethod::solve(IloEnv& env, Instance& inst, const unsigned int& time_limit, const int& verbose) {
     IloModel model(env);
 
     std::chrono::steady_clock::time_point start_reduce = std::chrono::steady_clock::now();
@@ -13,7 +13,7 @@ void DualizedMethod::solve(IloEnv& env, Instance& inst, const unsigned int& time
     }
     std::chrono::steady_clock::time_point end_reduce = std::chrono::steady_clock::now();
     std::chrono::microseconds duration_reduce = std::chrono::duration_cast<std::chrono::microseconds>(end_reduce - start_reduce);
-    if verbose > 1{
+    if (verbose > 1){
         cout << "Reducing symetry took " << duration_reduce.count() / 1e6 << " seconds " << endl;
     }
 

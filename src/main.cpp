@@ -41,8 +41,8 @@ int main(int argc, char **argv) {
             StaticMethod method;
             method.solve_and_display(env, instance, time_limit, verbose);
         } else if (strcmp(method_name, "dualized") == 0) {
-            DualizedMethod method;
-            method.solve_and_display(env, instance, time_limit, false, verbose);
+            DualizedMethod method(false);
+            method.solve_and_display(env, instance, time_limit, verbose);
         } else if (strcmp(method_name, "branch_and_cut") == 0) {
             BranchAndCutMethod method;
         } else if (strcmp(method_name, "plans_coupants") == 0) {

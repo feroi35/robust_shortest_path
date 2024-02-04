@@ -22,10 +22,10 @@ do
         ((count++))
     # if [ "$count" -lt 5 ]; then
     #     echo "Running file: $file, $count/123"
-    #     ./myprogram "$file" "$method" $verbose >> "$GLOBAL_CSV"
+    #     ./myprogram "$file" "$method" "$time_limit" $verbose >> "$GLOBAL_CSV"
     #     ((count++))
     # else
-        #     break
+    #         break
     # fi
 
 done

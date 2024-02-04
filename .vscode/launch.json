@@ -7,7 +7,7 @@
         "request": "launch",
         "program": "${workspaceFolder}/myprogram_debug",
         // "args": ["data/test/toy_symetries_removal.gr", "dualized", "1"],
-        "args": ["data/processed/100_USA-road-d.COL.gr", "dualized", "300", "2"],
+        "args": ["data/retest_dualized/1100_USA-road-d.COL.gr", "dualized", "300", "0"],
         // "args": ["data/test/toy2.gr", "plans_coupants", "300", "2"],
         "stopAtEntry": false,
         "cwd": "${workspaceFolder}",
