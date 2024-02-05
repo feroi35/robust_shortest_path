@@ -198,6 +198,7 @@ std::vector<IloInt> HeuristicMethod::retrieve_feasible_sol_2(const Instance& ins
         }
     }
     sol.push_back(inst.t);
+    xValues.end();
     infBound = cplex.getObjValue();
     return sol;
 }

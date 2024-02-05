@@ -10,12 +10,10 @@ ILOSTLBEGIN // macro to avoid incompatibility. Important to be before the other 
 #include <tuple>
 #include <numeric>      // std::iota
 #include <algorithm>    // std::sort, std::stable_sort
-// #include <bits/stdc++.h> //for map?
 
 #define TOL 1e-3
-
-
 const double undefinedValue = std::numeric_limits<double>::quiet_NaN();
+
 
 template <typename T> std::vector<size_t> argsort(const vector<T> &v) {
     // https://stackoverflow.com/questions/1577475/c-sorting-and-keeping-track-of-indexes
@@ -60,9 +58,8 @@ struct Instance {
 
     std::vector<std::vector<float>> d; // matrice des durées de trajet
     std::vector<std::vector<float>> D; // matrice des incertitudes des durées de trajet
-    std::vector<std::vector<int>> neighbors_list;
-    std::vector<std::vector<int>> reverse_neighbors_list;
-
+    std::vector<std::vector<int>> neighbors_list; // liste des noeuds voisins sortants
+    std::vector<std::vector<int>> reverse_neighbors_list; // liste des noeuds voisins entrants
     std::vector<std::vector<bool>> pair_nodes; // pour stocker les sous-chemins déjà explorés
 
     std::vector<IloInt> sol; // liste des villes visitées dans l'ordre

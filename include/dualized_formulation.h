@@ -8,9 +8,9 @@ class IloEnv;
 
 
 struct DualizedMethod : public SolveMethod {
-    bool reduce_symetry;
+    bool reduce_symmetry;
     
-    DualizedMethod(const bool& reduce_sym) {method_name = "dualized"; reduce_symetry = reduce_sym;};
+    DualizedMethod(const bool& reduce_sym) {method_name = "dualized"; reduce_symmetry = reduce_sym;};
     void solve(IloEnv& env, Instance& inst, const unsigned int& time_limit, const int& verbose) override;
 };
 

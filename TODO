@@ -398,5 +398,215 @@ Rien compris. Je n'arrive pas à savoir si c'est possible. Beaucoup de sources c
 
 On va dire que ce n'est pas possible alors que le site de CPLEX semble dire que c'est possible, y compris pour les MILP...
 
-# 3.02
+## 3.02
 test de arc_removal pour réduire les symétrie en preprocess: on contraint pour pas utiliser certains sous chemin si il existe un autre sous chemin identique. A priori rajoute trop de contraintes ca ralentit le calcul.
+
+
+## 05.02
+
+**1300_USA-road-d.BAY branch and cut: no solution admissible !**
+
+Mais on arrive à en trouver une à l'aide de retrieval2 dans l'heuristique
+[1099;1150;1115;1152;1243;1153;1084;1288;1273;1158;969;1267;516;424;559;581;898;671;938;994;970;792;826;1177]
+robust objective = 77217.7
+robust constraint = 492
+S = 492 
+
+Quelques unes des meilleures solutions statiques
+[1099;1082;845;890;697;435;353;328;165;330;424;438;1120;1160;902;503;490;502;771;792;826;1177]
+static objective = 60392
+robust constraint = 631
+
+[1099;1150;845;890;1081;846;423;395;591;731;577;595;457;861;902;503;582;825;970;1123;826;1177]
+static objective = 60392
+robust constraint = 624
+
+Problème dans la résolution des sous problèmes statiques
+Les score ne matchent pas. Surement un +1 de décalage
+Debug done, je n'avais pas mis la bonne formule, un weight[idx] au lieu de 2.0
+Différence de calcul entre l'objective et la contrainte robuste. 
+Je laisse les assert au cas où
+
+1300_USA-road-d.BAY
+Lazy constraint callback, it 43
+Robust score does not match
+1099 1110 881 1185 1250 1212 804 646 389 63 139 62 263 416 1027 1067 505 536 1186 1227 818 656 1086 1229 820 1177
+Robust score: 102694
+Robust score inst 98706.5
+Error in lazy constraint callback computing robust score: Robust score does not match
+
+Robust constraint inst 566
+Pas admissible
+
+Lazy constraint callback, it 43
+1099 1110 881 1185 1250 1212 804 646 389 63 139 62 263 416 1027 1067 505 536 1186 1227 818 656 1086 1229 820 1177
+Robust score: 102694 // D'où sort cette merde?
+Robust score inst 98706.5 // C'est le bon score
+Robust score does not match
+Error in lazy constraint callback computing robust score: Robust score does not match
+
+Pas de problème de score quand on le balance en warm start?!
+Robust score du warm start: 98706.5
+Ca ne vient pas de la solution, ça vient du xValues
+qui utilise des arcs qui ne sont pas dans le parcours?!
+
+
+Lazy constraint callback, it 43
+Tested solution
+1099 1110 881 1185 1250 1212 804 646 389 63 139 62 263 416 1027 1067 505 536 1186 1227 818 656 1086 1229 820 1177
+SUBPROBLEMS
+Robust score: 102694
+**Static score: 86572**
+Robust attack: 16122.5
+Used budget: 2
+
+INSTANCE
+**static_score: 82584**
+robust_attack: 16122.5
+robust_score: 98706.5
+1099 1110 881 1185 1250 1212 804 646 389 63 139 62 263 416 1027 1067 505 536 1186 1227 818 656 1086 1229 820 1177
+
+Robust score: 102694
+Robust score inst 98706.5
+Robust score does not match
+Error in lazy constraint callback computing robust score: Robust score does not match
+
+C'est le score statique qui ne correspond pas à l'itération 43. 
+C'est possible que l'instance ait été modifiée quelque part?
+
+
+Lazy constraint callback, it 43
+Tested solution
+1099 1110 881 1185 1250 1212 804 646 389 63 139 62 263 416 1027 1067 505 536 1186 1227 818 656 1086 1229 820 1177
+
+Arc 62 -> 263 is used: 475
+Arc 63 -> 139 is used: 9810
+Arc 139 -> 62 is used: 2438
+Arc 263 -> 416 is used: 728
+Arc 389 -> 63 is used: 4106
+Arc 416 -> 1027 is used: 3645
+Arc 505 -> 536 is used: 4964
+Arc 536 -> 1186 is used: 2053
+Arc 646 -> 389 is used: 4259
+Arc 656 -> 1086 is used: 1957
+Arc 804 -> 646 is used: 2691
+Arc 818 -> 656 is used: 6028
+Arc 820 -> 1177 is used: 5597
+Arc 881 -> 1185 is used: 1841
+**Arc 969 -> 1158 is used: 1994**
+Arc 1027 -> 1067 is used: 2821
+Arc 1067 -> 505 is used: 841
+Arc 1086 -> 1229 is used: 6459
+Arc 1099 -> 1110 is used: 2691
+Arc 1110 -> 881 is used: 4903
+**Arc 1158 -> 969 is used: 1994**
+Arc 1185 -> 1250 is used: 1792
+Arc 1186 -> 1227 is used: 1097
+Arc 1212 -> 804 is used: 4903
+Arc 1227 -> 818 is used: 2263
+Arc 1229 -> 820 is used: 2265
+Arc 1250 -> 1212 is used: 1957
+SUBPROBLEMS
+Static score: 86572
+Robust attack: 16122.5
+Robust score: 102694
+
+INSTANCE
+arc 1099 -> 1110 : 2691
+arc 1110 -> 881 : 4903
+arc 881 -> 1185 : 1841
+arc 1185 -> 1250 : 1792
+arc 1250 -> 1212 : 1957
+arc 1212 -> 804 : 4903
+arc 804 -> 646 : 2691
+arc 646 -> 389 : 4259
+arc 389 -> 63 : 4106
+arc 63 -> 139 : 9810
+arc 139 -> 62 : 2438
+arc 62 -> 263 : 475
+arc 263 -> 416 : 728
+arc 416 -> 1027 : 3645
+arc 1027 -> 1067 : 2821
+arc 1067 -> 505 : 841
+arc 505 -> 536 : 4964
+arc 536 -> 1186 : 2053
+arc 1186 -> 1227 : 1097
+arc 1227 -> 818 : 2263
+arc 818 -> 656 : 6028
+arc 656 -> 1086 : 1957
+arc 1086 -> 1229 : 6459
+arc 1229 -> 820 : 2265
+arc 820 -> 1177 : 5597
+
+static_score: 82584
+robust_attack: 16122.5
+robust_score: 98706.5
+1099 1110 881 1185 1250 1212 804 646 389 63 139 62 263 416 1027 1067 505 536 1186 1227 818 656 1086 1229 820 1177
+Robust score: 102694
+Robust score inst 98706.5
+Robust score does not match
+
+Il y a 2 arcs qui sont ajoutés dans la solution du branch and cut
+Arc 969 -> 1158 is used: 1994
+Arc 1158 -> 969 is used: 1994
+Ils augmentent le score statique. Pourquoi sont-ils choisis?
+
+Arc 68500: 1158 -> 969 : 1994 0.2;
+Arc 77460: 969 -> 1158: 1994 0.2;
+Noeud 969: p = 19, ph = 1
+Noeud 1158: p = 9, ph = 3
+
+On peut maintenant forcer le bug en warmStart!
+Dans la résolution des sous-problèmes, on résout bien le bon problème
+C'est lors du calcul de la solution qu'il y avait un problème. Puisqu'on ne voyait pas les arcs qui ne sont pas dans le chemin de s à t.
+A l'optimal, ces boucles n'arrivent jamais mais lors de la recherche, il peut y en avoir. 
+
+    // // WARM START TO DEBUG 1300_USA-road-d.BAY.gr
+    // // std::vector<IloInt> warm_sol = {1099,1150,1115,1152,1243,1153,1084,1288,1273,1158,969,1267,516,424,559,581,898,671,938,994,970,792,826,1177}; // admissible
+    // std::vector<IloInt> warm_sol =  {1099,1110,881,1185,1250,1212,804,646,389,63,139,62,263,416,1027,1067,505,536,1186,1227,818,656,1086,1229,820,1177};
+    // double robust_score = inst.compute_robust_score_milp(env, warm_sol);
+    // double static_score = inst.compute_static_score(warm_sol);
+    // double robust_constraint = inst.compute_robust_constraint_milp(env, warm_sol);
+    // double static_constraint = inst.compute_static_constraint(warm_sol);
+    // std::cout << "Robust score du warm start: " << robust_score << std::endl;
+    // std::cout << "Static score du warm start: " << static_score << std::endl;
+    // std::cout << "Robust constraint du warm start: " << robust_constraint << std::endl;
+    // std::cout << "Static constraint: " << static_constraint << std::endl;
+
+    // IloNumVarArray allStartVar(env);
+    // IloNumArray allStartValues(env, inst.n_arc + inst.n + 1);
+    // for (unsigned int a=0; a<inst.n_arc; a++) {
+    //     allStartVar.add(x[a]);
+    //     allStartValues[a] = 0.0;
+    // }
+    // for (unsigned int i=0; i<inst.n; i++) {
+    //     allStartVar.add(y[i]);
+    //     allStartValues[i+inst.n_arc] = 0.0;
+    // }
+    // allStartVar.add(z);
+
+    // for (unsigned int i=0; i<warm_sol.size()-1; i++) {
+    //     for (unsigned int a=0; a<inst.n_arc; a++) {
+    //         if (inst.mat[a].tail == warm_sol[i] && inst.mat[a].head == warm_sol[i+1]) {
+    //             allStartValues[a] = 1;
+    //             break;
+    //         }
+    //     }
+    // }
+    // allStartValues[68500] = 1.0;
+    // allStartValues[77460] = 1.0;
+    // for (unsigned int i=0; i<warm_sol.size(); i++) {
+    //     allStartValues[warm_sol[i]-1+inst.n_arc] = 1.0;
+    // }
+    // allStartValues[inst.n_arc+968] = 1.0;
+    // allStartValues[inst.n_arc+1157] = 1.0;
+    // allStartValues[inst.n_arc+inst.n] = robust_score;
+
+    // cplex.addMIPStart(allStartVar, allStartValues);
+    // allStartVar.end();
+    // allStartValues.end();
+
+**close_model**
+c'est une bonne pratique d'ajouter model.end() et cplex.end() à la fin du programme
+Mais c'est extrêmement long (plusieurs dizaines de secondes) pour branch and cut par exemple
+Donc nous ne le faisons pas volontairement

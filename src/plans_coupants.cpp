@@ -122,6 +122,11 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
         spentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count()) / 1e6;
     }
 
+    if (cplex.getStatus() == IloAlgorithm::Infeasible) {
+        throw std::domain_error("Infeasible " + method_name + " model for instance " + inst.name);
+    } else if (cplex.getStatus() == IloAlgorithm::Unknown) {
+        throw std::domain_error("No solution found (yet) for method " + method_name + " with instance " + inst.name + ". Maybe not enough time");
+    }
     // Retrieve solution
     retrieveCplexSolution(cplex, best_xValues, inst);
     best_xValues.end();

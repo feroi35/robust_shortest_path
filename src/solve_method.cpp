@@ -14,7 +14,7 @@ double Subproblems::solve_objective_subproblem(IloEnv& env, const IloNumArray& x
     unsigned int n_edges = 0;
 
     for (unsigned int a=0; a<inst.n_arc; a++) {
-        if (xValues[a] > 1 - TOL) {
+        if (xValues[a] > 0.5) {
             uncertainties.push_back(inst.mat[a].D);
             weights.push_back(inst.mat[a].d);
             idx_edges.push_back(a);
@@ -28,7 +28,7 @@ double Subproblems::solve_objective_subproblem(IloEnv& env, const IloNumArray& x
     int idx = n_edges-1;
     while (used_budget < inst.d1 && idx >= 0) {
         unsigned int arc_idx = argsorted_weights[idx];
-        float delta1_i = std::min(inst.d1 - used_budget, uncertainties[arc_idx]);
+        double delta1_i = std::min(inst.d1 - used_budget, uncertainties[arc_idx]);
         used_budget += delta1_i;
         robust_attack += delta1_i * weights[arc_idx];
 
@@ -46,36 +46,35 @@ double Subproblems::solve_constraint_subproblem(IloEnv& env, const IloNumArray& 
         const IloBoolVarArray& y, const Instance& inst, IloExpr& expr) {
     // Compute the robust constraint (solving a continuous knapsack) and modify the expression
     // It is done in the same function because it allows to be more efficient
-    std::vector<IloNum> weight; // ph
+    std::vector<IloNum> weights; // ph
     std::vector<IloInt> idx_nodes;
     double static_constraint = 0.0;
     unsigned int n_nodes = 0;
 
     for (unsigned int i=0; i<inst.n; i++) {
-        if (yValues[i] > TOL) {
-            weight.push_back(inst.ph[i]);
+        if (yValues[i] > 0.5) {
+            weights.push_back(inst.ph[i]);
             idx_nodes.push_back(i);
             static_constraint += inst.p[i];
             n_nodes++;
         }
     }
+    std::vector<size_t> argsorted_weights = argsort(weights);
+    double robust_attack = 0.0;
+    double used_budget = 0.0;
+    int idx = n_nodes-1;
+    while (used_budget < inst.d2 && idx >= 0) {
+        unsigned int node_idx = argsorted_weights[idx];
+        double delta2_i = std::min(inst.d2 - used_budget, 2.0);
+        used_budget += delta2_i;
+        robust_attack += delta2_i * weights[node_idx];
 
-    std::vector<size_t> argsorted_weight = argsort(weight);
-    double robust_attack2 = 0.0;
-    double used_budget2 = 0.0;
-    int idx2 = n_nodes-1;
-    while (used_budget2 < inst.d2 && idx2 >= 0) {
-        unsigned int node_idx2 = argsorted_weight[idx2];
-        float delta2_i = std::min(inst.d2 - used_budget2, weight[node_idx2]);
-        used_budget2 += delta2_i;
-        robust_attack2 += delta2_i * weight[node_idx2];
-
-        IloInt real_node = idx_nodes[node_idx2];
+        IloInt real_node = idx_nodes[node_idx];
         expr += inst.ph[real_node] * delta2_i * y[real_node];
-        idx2--;
+        idx--;
     }
     expr += IloScalProd(y, inst.p);
-    double robust_constraint = static_constraint + robust_attack2;
+    double robust_constraint = static_constraint + robust_attack;
     return robust_constraint;
 }
 
@@ -148,13 +147,6 @@ void SolveMethod::add_static_constraints(IloEnv& env, IloModel& model, IloBoolVa
 
 
 void SolveMethod::retrieveCplexSolution(const IloCplex& cplex, const IloNumArray& xValues, Instance& inst) {
-    // Makes some checks and updates inst.sol, nodesExplored
-    if (cplex.getStatus() == IloAlgorithm::Infeasible) {
-        throw std::domain_error("Infeasible " + method_name + " model for instance " + inst.name);
-    } else if (cplex.getStatus() == IloAlgorithm::Unknown) {
-        throw std::domain_error("No solution found for method " + method_name + " with instance " + inst.name + ". Maybe not enough time");
-    }
-
     if (!inst.sol.empty()) {
         std::cerr << "Warning: solution vector not empty for instance " << inst.name << std::endl;
         inst.sol.clear();
@@ -163,7 +155,7 @@ void SolveMethod::retrieveCplexSolution(const IloCplex& cplex, const IloNumArray
     while (current_node != inst.t-1) {
         inst.sol.push_back(current_node+1);
         for (unsigned int a=0; a<inst.n_arc; a++) {
-            if (inst.mat[a].tail == current_node+1 && xValues[a] >= 1 - TOL) {
+            if (inst.mat[a].tail == current_node+1 && xValues[a] >= 0.5) {
                 current_node = inst.mat[a].head-1;
                 break;
             }
@@ -178,7 +170,7 @@ void SolveMethod::retrieveCplexSolution(const IloCplex& cplex, const IloNumArray
 
 void SolveMethod::parametrizeCplex(IloCplex& cplex, const unsigned int& time_limit, const int& verbose) const {
     cplex.setParam(IloCplex::Param::TimeLimit, time_limit);
-    cplex.setParam(IloCplex::Param::MIP::Tolerances::MIPGap, 1e-7);
+    cplex.setParam(IloCplex::Param::MIP::Tolerances::MIPGap, 1e-5);
     if (verbose < 2) cplex.setOut(cplex.getEnv().getNullStream());
 }
 

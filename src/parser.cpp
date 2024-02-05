@@ -249,7 +249,6 @@ double Instance::compute_robust_score_knapsack(const std::vector<IloInt>& soluti
         }
         static_score += d[current_node-1][next_node-1];
         current_node = next_node;
-
     }
     if (current_node != t) {
         throw std::domain_error("Last node of solution is not t");
@@ -276,9 +275,18 @@ double Instance::compute_robust_score_knapsack(const std::vector<IloInt>& soluti
 
 
 double Instance::compute_static_constraint(const std::vector<IloInt>& solution) const {
+    if (solution.empty()) {
+        throw std::domain_error("Empty solution");
+    }
+    if (solution[0] != s) {
+        throw std::domain_error("First node of solution is not s");
+    }
     double static_constraint = 0.0;
     for (unsigned int i=0; i < solution.size(); i++) {
         static_constraint += p[solution[i]-1];
+    }
+    if (solution[solution.size()-1] != t) {
+        throw std::domain_error("Last node of solution is not t");
     }
     return static_constraint;
 }
@@ -341,7 +349,7 @@ double Instance::compute_robust_constraint_knapsack(const std::vector<IloInt>& s
         throw std::domain_error("Empty solution");
     }
     unsigned int n_cities = solution.size();
-    std::vector<IloNum> uncertain_weights(n_cities, 0.0);
+    std::vector<IloNum> weights(n_cities, 0.0); // ph des villes visitées
 
     unsigned int current_node = solution[0];
     if (current_node != s) {
@@ -350,22 +358,21 @@ double Instance::compute_robust_constraint_knapsack(const std::vector<IloInt>& s
     double static_constraint = 0.0;
     for (unsigned int k=0; k < n_cities; k++) {
         current_node = solution[k];
-        uncertain_weights[k] = ph[current_node-1];
+        weights[k] = ph[current_node-1];
         static_constraint += p[current_node-1];
     }
     if (current_node != t) {
         throw std::domain_error("Last node of solution is not t");
     }
-
-    std::vector<size_t> argsorted_weights = argsort(uncertain_weights);
-    double robust_constraint = 0.0;
+    std::vector<size_t> argsorted_weights = argsort(weights);
+    double robust_attack = 0.0;
     double used_budget = 0.0;
     int idx = n_cities-1;
     while (used_budget < d2 && idx >= 0) {
         unsigned int arc_idx = argsorted_weights[idx];
         float delta2_i = std::min(d2 - used_budget, 2.0);
         used_budget += delta2_i;
-        robust_constraint += delta2_i * uncertain_weights[arc_idx];
+        robust_attack += delta2_i * weights[arc_idx];
         idx--;
     }
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
@@ -373,7 +380,8 @@ double Instance::compute_robust_constraint_knapsack(const std::vector<IloInt>& s
     if (verbose >= 2) {
         std::cout << "(Time: " << duration.count() << " microseconds) ";
     }
-    return static_constraint + robust_constraint;
+    double robust_constraint = static_constraint + robust_attack;
+    return robust_constraint;
 }
 
 
