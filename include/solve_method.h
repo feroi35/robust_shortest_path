@@ -31,6 +31,7 @@ struct SolveMethod {
     void add_static_constraints(IloEnv& env, IloModel& model, IloBoolVarArray& x, IloBoolVarArray& y, IloNumVar z, const Instance& inst) const;
     void retrieveCplexSolution(const IloCplex& cplex, const IloNumArray& xValues, Instance& inst);
     void parametrizeCplex(IloCplex& cplex, const unsigned int& time_limit, const int& verbose) const;
+    void cplexCheckStatus(const IloCplex& cplex, const Instance& inst) const;
 
     virtual void solve(IloEnv& env, Instance& inst, const unsigned int& time_limit, const int& verbose) = 0;
     

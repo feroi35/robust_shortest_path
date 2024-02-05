@@ -24,7 +24,7 @@ ILOLAZYCONSTRAINTCALLBACK7(myCallBack, const IloBoolVarArray&, x, const IloBoolV
         }
         exprObjective.end();
     } catch (std::exception& e) {
-        std::cerr << "Error in lazy constraint callback for objective at iter : " << nbIterations
+        std::cerr << "Error in lazy constraint callback for objective at iter : " << nIteration
              << " " << e.what() << std::endl;
         throw e;
     }
@@ -37,7 +37,7 @@ ILOLAZYCONSTRAINTCALLBACK7(myCallBack, const IloBoolVarArray&, x, const IloBoolV
         }
         exprConstraint.end();
     } catch (std::exception& e) {
-        std::cerr << "Error in lazy constraint callback for constraint at iter : " << nbIterations
+        std::cerr << "Error in lazy constraint callback for constraint at iter : " << nIteration
              << " " << e.what() << std::endl;
         throw e;
     }
@@ -121,11 +121,7 @@ void BranchAndCutMethod::solve(IloEnv& env, Instance& inst, const unsigned int& 
     cplex.use(myCallBack(env,x,y,z,inst,verbose,nCallBacks,callBacksTimeSpan));
     cplex.solve();
 
-    if (cplex.getStatus() == IloAlgorithm::Infeasible) {
-        throw std::domain_error("Infeasible " + method_name + " model for instance " + inst.name);
-    } else if (cplex.getStatus() == IloAlgorithm::Unknown) {
-        throw std::domain_error("No solution found (yet) for method " + method_name + " with instance " + inst.name + ". Maybe not enough time");
-    }
+    cplexCheckStatus(cplex, inst);
     // Retrieve solution
     IloNumArray xValues(env);
     cplex.getValues(xValues, x);

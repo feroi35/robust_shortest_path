@@ -70,12 +70,7 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
         new_best_sol_found = false;
 
         cplex.solve();
-
-        if (cplex.getStatus() == IloAlgorithm::Infeasible) {
-            throw std::domain_error("Infeasible plans_coupants model for instance " + inst.name + " at iteration " + std::to_string(nCallBacks));
-        } else if (cplex.getStatus() == IloAlgorithm::Unknown) {
-            throw std::domain_error("No solution found for instance " + inst.name  + " at iteration " + std::to_string(nCallBacks) + ". Maybe not enough time");
-        }
+        cplexCheckStatus(cplex, inst);
 
         cplex.getValues(xValues, x); // cplex.getValues does not work for IloBoolArray...
         cplex.getValues(yValues, y);
@@ -122,11 +117,7 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
         spentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count()) / 1e6;
     }
 
-    if (cplex.getStatus() == IloAlgorithm::Infeasible) {
-        throw std::domain_error("Infeasible " + method_name + " model for instance " + inst.name);
-    } else if (cplex.getStatus() == IloAlgorithm::Unknown) {
-        throw std::domain_error("No solution found (yet) for method " + method_name + " with instance " + inst.name + ". Maybe not enough time");
-    }
+    cplexCheckStatus(cplex, inst);
     // Retrieve solution
     retrieveCplexSolution(cplex, best_xValues, inst);
     best_xValues.end();

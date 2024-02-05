@@ -22,11 +22,7 @@ void StaticMethod::solve(IloEnv& env, Instance& inst, const unsigned int& time_l
     parametrizeCplex(cplex, time_limit, verbose);
     cplex.solve();
 
-    if (cplex.getStatus() == IloAlgorithm::Infeasible) {
-        throw std::domain_error("Infeasible " + method_name + " model for instance " + inst.name);
-    } else if (cplex.getStatus() == IloAlgorithm::Unknown) {
-        throw std::domain_error("No solution found (yet) for method " + method_name + " with instance " + inst.name + ". Maybe not enough time");
-    }
+    cplexCheckStatus(cplex, inst);
     // Retrieve solution
     IloNumArray xValues(env);
     cplex.getValues(xValues, x);

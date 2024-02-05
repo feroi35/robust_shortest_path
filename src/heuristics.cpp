@@ -173,13 +173,7 @@ std::vector<IloInt> HeuristicMethod::retrieve_feasible_sol_2(const Instance& ins
     parametrizeCplex(cplex, 300, verbose);
     cplex.solve();
 
-    if (cplex.getStatus() == IloAlgorithm::Infeasible) {
-        throw std::domain_error("Infeasible heuristic retrieval model for instance " + inst.name);
-    } else if (cplex.getStatus() == IloAlgorithm::Unknown) {
-        throw std::domain_error("No solution found for heuristic retrieval model for instance "
-            + inst.name + ". Maybe not enough time");
-    }
-
+    cplexCheckStatus(cplex, inst);
     std::vector<IloInt> sol;
     unsigned int current_node = inst.s-1;
 

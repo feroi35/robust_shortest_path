@@ -175,6 +175,15 @@ void SolveMethod::parametrizeCplex(IloCplex& cplex, const unsigned int& time_lim
 }
 
 
+void SolveMethod::cplexCheckStatus(const IloCplex& cplex, const Instance& inst) const {
+    if (cplex.getStatus() == IloAlgorithm::Infeasible) {
+        throw std::domain_error("Infeasible " + method_name + " model for instance " + inst.name);
+    } else if (cplex.getStatus() == IloAlgorithm::Unknown) {
+        throw std::domain_error("No feasible solution found for method " + method_name + " with instance " + inst.name + ". Maybe not enough time");
+    }
+}
+
+
 void SolveMethod::solve_and_display(IloEnv& env, Instance& inst, const unsigned int& time_limit, const int& verbose) {
     try {
         std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
