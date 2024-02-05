@@ -26,7 +26,7 @@ void StaticMethod::solve(IloEnv& env, Instance& inst, const unsigned int& time_l
     // Retrieve solution
     IloNumArray xValues(env);
     cplex.getValues(xValues, x);
-    retrieveCplexSolution(cplex, xValues, inst);
+    retrieveCplexSolution(xValues, inst);
     xValues.end();
 
     nodesExplored = cplex.getNnodes();

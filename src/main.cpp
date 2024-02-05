@@ -41,13 +41,15 @@ int main(int argc, char **argv) {
             StaticMethod method;
             method.solve_and_display(env, instance, time_limit, verbose);
         } else if (strcmp(method_name, "dualized") == 0) {
-            DualizedMethod method(false);
+            bool breakSymmetry = false;
+            DualizedMethod method(breakSymmetry);
             method.solve_and_display(env, instance, time_limit, verbose);
         } else if (strcmp(method_name, "branch_and_cut") == 0) {
             BranchAndCutMethod method;
             method.solve_and_display(env, instance, time_limit, verbose);
         } else if (strcmp(method_name, "plans_coupants") == 0) {
-            PlansCoupantsMethod method;
+            bool warmStart = false;
+            PlansCoupantsMethod method(warmStart);
             method.solve_and_display(env, instance, time_limit, verbose);
         } else {
             std::cerr << "Method_name not recognized: " << method_name << std::endl;

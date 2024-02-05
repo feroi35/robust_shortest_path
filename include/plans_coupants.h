@@ -8,7 +8,8 @@ class IloEnv;
 
 
 struct PlansCoupantsMethod : public SolveMethod {
-    PlansCoupantsMethod() {method_name = "plans_coupants";}
+    bool warmStart;
+    PlansCoupantsMethod(const bool& warmStart_ = false) {method_name = "plans_coupants"; warmStart = warmStart_;}
     void solve(IloEnv& env, Instance& inst, const unsigned int& time_limit, const int& verbose) override;
 };
 

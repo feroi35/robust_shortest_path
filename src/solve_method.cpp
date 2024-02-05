@@ -146,7 +146,7 @@ void SolveMethod::add_static_constraints(IloEnv& env, IloModel& model, IloBoolVa
 }
 
 
-void SolveMethod::retrieveCplexSolution(const IloCplex& cplex, const IloNumArray& xValues, Instance& inst) {
+void SolveMethod::retrieveCplexSolution(const IloNumArray& xValues, Instance& inst) {
     if (!inst.sol.empty()) {
         std::cerr << "Warning: solution vector not empty for instance " << inst.name << std::endl;
         inst.sol.clear();

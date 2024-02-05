@@ -33,42 +33,43 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
     IloCplex cplex;
     cplex = IloCplex(model);
     parametrizeCplex(cplex, time_limit, verbose);
+    // The IloCplex object remains the same, but the model is different
+    // It allows to keep warm starts.
 
     bool optimality = false;
     bool new_best_sol_found = false;
+    unsigned int nWarmStarts = 0;
     while (!optimality && spentTime < time_limit) {
         if (verbose > 0) {
             std::cout << "Plans coupants: iteration " << nCallBacks << std::endl;
             std::cout << "Time: " << spentTime << std::endl;
         }
 
-        // Warm start
-        if (new_best_sol_found) {
-            if (verbose > 0) std::cout << "Warm start" << std::endl;
-            IloNumVarArray startVarX(env);
+        if (warmStart && new_best_sol_found) {
+            nWarmStarts++;
+            if (verbose > 0) {
+                std::cout << "Manual added warm start " << nWarmStarts << std::endl;
+                std::cout << "Real warm starts: " << cplex.getNMIPStarts() << std::endl;
+            }
+            IloNumVarArray allStartVar(env);
+            IloNumArray allStartVal(env);
             for (unsigned int a = 0; a < inst.n_arc; ++a) {
-                startVarX.add(x[a]);
+                allStartVar.add(x[a]);
+                allStartVal.add(best_xValues[a]);
             }
-            cplex.addMIPStart(startVarX, best_xValues);
-            startVarX.end();
-
-            IloNumVarArray startVarY(env);
             for (unsigned int i = 0; i < inst.n; ++i) {
-                startVarY.add(y[i]);
+                allStartVar.add(y[i]);
+                allStartVal.add(best_yValues[i]);
             }
-            cplex.addMIPStart(startVarY, best_yValues);
-            startVarY.end();
-
-            IloNumVarArray startVarZ(env);
-            IloNumArray zArray(env, 1, best_score);
-            startVarZ.add(z);
-            zArray[0] = best_score;
-            cplex.addMIPStart(startVarZ, zArray);
-            startVarZ.end();
-            zArray.end();
+            allStartVar.add(z);
+            allStartVal.add(best_score);
+            cplex.addMIPStart(allStartVar, allStartVal);
+            allStartVar.end();
+            allStartVal.end();
+            new_best_sol_found = false;
         }
-        new_best_sol_found = false;
 
+        if (verbose > 1) std::cout << std::endl;
         cplex.solve();
         cplexCheckStatus(cplex, inst);
 
@@ -100,6 +101,48 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
             model.add(exprConstraint <= inst.S);
         }
         exprConstraint.end();
+
+        // Breaking symmetries
+        std::vector<IloInt> sol;
+        unsigned int current_node = inst.s-1;
+        while (current_node != inst.t-1) {
+            sol.push_back(current_node+1);
+            if (yValues[current_node] < 1 - TOL) {
+                std::cerr << "No equivalence between xValues and yValues" << std::endl;
+                throw std::domain_error("A node is not reached");
+            }
+            for (unsigned int a=0; a<inst.n_arc; a++) {
+                if (inst.mat[a].tail == current_node+1 && xValues[a] >= 0.5) {
+                    current_node = inst.mat[a].head-1;
+                    break;
+                }
+            }
+            if (current_node == sol[inst.sol.size()-1]-1) {
+                throw std::domain_error("Using arc that does not exist for instance " + inst.name);
+            }
+        }
+        sol.push_back(inst.t);
+        if (yValues[inst.t-1] < 1 - TOL) {
+            std::cerr << "t is not reached" << std::endl;
+            throw std::domain_error("You can't get into t");
+        }
+
+        for (unsigned int i=0; i<sol.size()-2;i++){
+            if (inst.pair_nodes[sol[i]-1][sol[i+2]-1]) {
+                continue; // Already explored possible subpath
+            }
+            inst.pair_nodes[sol[i]-1][sol[i+2]-1] = true;
+            int node_i = (int) sol[i]-1;
+            int node_j = (int) sol[i+2]-1;
+            std::vector<std::vector<int>> to_forbid = arcs_to_forbid(inst, node_i, node_j);
+            for (unsigned int k=0; k<to_forbid.size(); k++) {
+                if (to_forbid[k][2] == to_forbid[k][3]) {
+                    std::cerr << "Arc to forbid loop on arc " << to_forbid[k][3] << " for node " << to_forbid[k][0] << "and node " << to_forbid[k][1] << endl;
+                }
+                model.add(x[to_forbid[k][2]] + x[to_forbid[k][3]] <= 1);
+            }
+        }
+
         callBacksTimeSpan += static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - startSubProblemsResolution).count()) / 1e6;
 
         // Update best solution
@@ -107,7 +150,7 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
             best_score = robust_objective;
             best_xValues.end();
             best_yValues.end();
-            best_xValues = xValues;
+            best_xValues = xValues; // Caution with the segfault
             best_yValues = yValues;
             new_best_sol_found = true;
         }
@@ -117,9 +160,8 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
         spentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count()) / 1e6;
     }
 
-    cplexCheckStatus(cplex, inst);
     // Retrieve solution
-    retrieveCplexSolution(cplex, best_xValues, inst);
+    retrieveCplexSolution(best_xValues, inst);
     best_xValues.end();
     best_yValues.end();
     if (xValues.getSize() > 0) {
@@ -127,5 +169,5 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
         xValues.end();
         yValues.end();
     }
-    infBound = cplex.getBestObjValue();
+    infBound = best_bound;
 }
