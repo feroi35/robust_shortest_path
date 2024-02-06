@@ -2,20 +2,29 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import math
 
 
-def raphael():
+def merge_dataframe():
+    """
+    select two dataframe of simulations, and merge them into a single dataframe, chosing the best objective and lower bound
+    for each instance
+    """
     df = pd.read_csv('results/dualized_results.csv')
     df2 = pd.read_csv('results/dualized_results_bis.csv')
 
     df_merge = pd.DataFrame(columns = df.columns)
 
     for index, row in df.iterrows():
-        if row['objective'] != row['lower_bound']:
+        if row['objective'] != row['lower_bound']:                
             row_retested = df2[df2['instance'].str.contains(row['instance'][-22:])]
             row_retested.at[row_retested.index[0], 'instance'] = row['instance']
-            # très peu sur de la ligne en dessous, a verifier
-            if row_retested['objective'].values[0] - row_retested['lower_bound'].values[0] <= row['objective'] - row['lower_bound']:
+            if math.isnan(row['objective']):
+                df_merge = pd.concat([df_merge, row_retested], ignore_index=True)
+                continue
+            if row_retested['objective'].values[0] - row_retested['lower_bound'].values[0] < row['objective'] - row['lower_bound']:
+                df_merge = pd.concat([df_merge, row_retested], ignore_index=True)
+            elif row_retested['objective'].values[0] - row_retested['lower_bound'].values[0] == row['objective'] - row['lower_bound'] and row_retested['time'].values[0] < row['time']:
                 df_merge = pd.concat([df_merge, row_retested], ignore_index=True)
             else:
                 df_merge = pd.concat([df_merge, row.to_frame().T], ignore_index=True)
