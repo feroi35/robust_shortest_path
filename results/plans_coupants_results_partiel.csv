@@ -57,12 +57,16 @@ data/processed/2100_USA-road-d.BAY.gr,plans_coupants,,,,,,,,,,,,
 data/processed/2100_USA-road-d.COL.gr,plans_coupants,43998.7,35568,333.594,0,1334,35568,1268,1334,[88;1837;1290;188;687;248;236;181;1670;245;1434;945;479;529;1985;2013],1,5,0.164011
 data/processed/2100_USA-road-d.NY.gr,plans_coupants,123257,101210,466.528,0,634,101210,578,636,[1785;1756;1288;1554;1226;1240;579;324;360;1450;1193;856;697;1724;855;442;1740;1108;1559;1551;517;478;1203;2042;2030;728;1798;493;1753;1327;1418;1434;1974],1,6,0.108089
 data/processed/2200_USA-road-d.BAY.gr,plans_coupants,,,,,,,,,,,,
+data/processed/2200_USA-road-d.COL.gr,plans_coupants,1e+09,39310,409.498,0,1431,39407,1329,1422,[88;362;331;1934;401;2193;1576;1932;2123;1856;2169;2131;2150;2006;1997;2034;2153],0,4,0.118699
 data/processed/2200_USA-road-d.NY.gr,plans_coupants,,,,,,,,,,,,
 data/processed/2300_USA-road-d.BAY.gr,plans_coupants,,,,,,,,,,,,
+data/processed/2300_USA-road-d.COL.gr,plans_coupants,50172.5,40803,450.903,0,1473,40803,1400,1478,[88;189;1491;212;485;1322;1164;1659;2285;1591;2205;2231;2294;2256;1997;2033;2258;2272],1,4,0.130192
 data/processed/2300_USA-road-d.NY.gr,plans_coupants,,,,,,,,,,,,
 data/processed/2400_USA-road-d.BAY.gr,plans_coupants,,,,,,,,,,,,
+data/processed/2400_USA-road-d.COL.gr,plans_coupants,1e+09,40803,333.282,0,1591,40803,1455,1587,[88;189;213;188;172;112;104;87;111;228;1863;311;1447;620;2053;2033;2153;2272],0,4,0.14312
 data/processed/2400_USA-road-d.NY.gr,plans_coupants,,,,,,,,,,,,
 data/processed/2500_USA-road-d.BAY.gr,plans_coupants,,,,,,,,,,,,
+data/processed/2500_USA-road-d.COL.gr,plans_coupants,1e+09,41107,351.856,0,1589,41107,1487,1571,[88;538;2403;1807;1731;2131;2000;1091;1160;1346;2300;2393;2217;2322;1822;2193;2432;2442;2282;2088],0,5,0.133869
 data/processed/2500_USA-road-d.NY.gr,plans_coupants,,,,,,,,,,,,
 data/processed/250_USA-road-d.BAY.gr,plans_coupants,19248,18862.3,300.374,0,318,14247,181,357,[159;189;209;191;246;92;229;199;222;224],1,141,0.073886
 data/processed/250_USA-road-d.COL.gr,plans_coupants,32794.3,30536.9,307.658,0,226,25827,224,260,[83;60;183;65;46;168;10;18;4;25;113;192;161],1,62,0.024171
