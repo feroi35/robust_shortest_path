@@ -1,0 +1,7 @@
+instance,method,objective,lowerBound
+1,a,10,5
+1,b,8,4
+1,static,15,3
+2,a,5,4
+2,b,10,2
+2,static,12,1

@@ -1,9 +1,8 @@
-method="branch_and_cut"
-time_limit=1200
+method="plans_coupants"
+time_limit=300
 verbose=0
 
-GLOBAL_CSV="results/${method}_results_ter.csv"
-# repo_instances="data/retest_dualized"
+GLOBAL_CSV="results/${method}_results_bis.csv"
 repo_instances="data/processed"
 
 # Supprimer le fichier CSV global s'il existe déjà

@@ -7,7 +7,7 @@
         "request": "launch",
         "program": "${workspaceFolder}/myprogram_debug",
         // "args": ["data/processed/20_USA-road-d.COL.gr", "heuristic", "300", "0"],
-        "args": ["data/processed/1300_USA-road-d.BAY.gr", "branch_and_cut", "600", "2"],
+        "args": ["data/processed/1200_USA-road-d.BAY.gr", "plans_coupants", "10", "2"],
         "stopAtEntry": false,
         "cwd": "${workspaceFolder}",
         "environment": [

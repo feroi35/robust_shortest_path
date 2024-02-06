@@ -29,8 +29,11 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
         best_yValues.add(0.0);
     }
     double best_score = 1e9;
+    double less_violated_constraint = 1e9; 
+    // Even if the solution is not admissible, it is still useful to return the less violated solution found
+    bool admissible_solution_found = false;
     double best_bound = 0.0;
-    IloNumArray xValues(env); // to retrieve the values
+    IloNumArray xValues(env);
     IloNumArray yValues(env);
 
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
@@ -154,9 +157,12 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
         callBacksTimeSpan += static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - startSubProblemsResolution).count()) / 1e6;
 
         // Update best solution
-        if (!violated_constraint && robust_objective < best_score) {
+        if ((!violated_constraint && robust_objective < best_score)
+                || (!admissible_solution_found && robust_constraint < less_violated_constraint)
+                || (!admissible_solution_found && robust_constraint == less_violated_constraint && robust_objective < best_score)) {
             best_score = robust_objective;
-            // Caution with the segfault
+            less_violated_constraint = robust_constraint;
+            admissible_solution_found = admissible_solution_found || !violated_constraint;
             for (unsigned int a = 0; a < inst.n_arc; ++a) {
                 best_xValues[a] = xValues[a];
             }

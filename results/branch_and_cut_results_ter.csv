@@ -1,5 +1,0 @@
-instance,method,objective,lower_bound,time,nb_nodes,robust_constraint,static_objective,static_constraint,admissibility,S,nCallBacks,callBacksTimeSpan,path
-data/processed/1000_USA-road-d.BAY.gr,branch_and_cut,48250,40117,60.2162,106,646,40117,500,978,1,201,2.74841,[659;878;488;474;717;487;625;456;438;875;330;231;395;454;966;965;993]
-data/processed/1000_USA-road-d.COL.gr,branch_and_cut,29904.8,24068,60.8018,204,841,24068,839,1086,1,163,2.96886,[213;188;162;70;417;437;122;33;281;368;117;724;710;666]
-data/processed/1000_USA-road-d.NY.gr,branch_and_cut,43329,36723,60.2655,37,663,36723,661,767,1,309,3.41042,[576;707;689;376;151;695;324;581;325;108;766;3;198;24;54;435;256;349;478;621]
-data/processed/100_USA-road-d.BAY.gr,branch_and_cut,10857.1,8818,12.3148,1182,139,8818,122,144,1,634,0.279959,[59;44;48;4;14;41;74]
