@@ -60,7 +60,7 @@ ILOLAZYCONSTRAINTCALLBACK7(myCallBack, const IloBoolVarArray&, x, const IloBoolV
                     break;
                 }
             }
-            if (current_node == sol[inst.sol.size()-1]-1) {
+            if (current_node == sol[sol.size()-1]-1) {
                 throw std::domain_error("Using arc that does not exist for instance " + inst.name);
             }
         }

@@ -22,6 +22,12 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
     // And the final solution could be not admissible (because of the time limit)
     IloNumArray best_xValues(env);
     IloNumArray best_yValues(env);
+    for (unsigned int a = 0; a < inst.n_arc; ++a) {
+        best_xValues.add(0.0);
+    }
+    for (unsigned int i = 0; i < inst.n; ++i) {
+        best_yValues.add(0.0);
+    }
     double best_score = 1e9;
     double best_bound = 0.0;
     IloNumArray xValues(env); // to retrieve the values
@@ -69,9 +75,11 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
             new_best_sol_found = false;
         }
 
-        if (verbose > 1) std::cout << std::endl;
+        if (verbose > 1) std::cout << "\nSolving..." << std::endl;
         cplex.solve();
+        if (verbose > 1) std::cout << "Solved!" << std::endl;
         cplexCheckStatus(cplex, inst);
+
 
         cplex.getValues(xValues, x); // cplex.getValues does not work for IloBoolArray...
         cplex.getValues(yValues, y);
@@ -117,7 +125,7 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
                     break;
                 }
             }
-            if (current_node == sol[inst.sol.size()-1]-1) {
+            if (current_node == sol[sol.size()-1]-1) {
                 throw std::domain_error("Using arc that does not exist for instance " + inst.name);
             }
         }
@@ -148,10 +156,13 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
         // Update best solution
         if (!violated_constraint && robust_objective < best_score) {
             best_score = robust_objective;
-            best_xValues.end();
-            best_yValues.end();
-            best_xValues = xValues; // Caution with the segfault
-            best_yValues = yValues;
+            // Caution with the segfault
+            for (unsigned int a = 0; a < inst.n_arc; ++a) {
+                best_xValues[a] = xValues[a];
+            }
+            for (unsigned int i = 0; i < inst.n; ++i) {
+                best_yValues[i] = yValues[i];
+            }
             new_best_sol_found = true;
         }
         optimality = !violated_objective && !violated_constraint;
@@ -164,10 +175,7 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
     retrieveCplexSolution(best_xValues, inst);
     best_xValues.end();
     best_yValues.end();
-    if (xValues.getSize() > 0) {
-        // It the best solution is obtained at the last iteration, there can be segfault
-        xValues.end();
-        yValues.end();
-    }
+    xValues.end();
+    yValues.end();
     infBound = best_bound;
 }
