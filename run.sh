@@ -4,8 +4,9 @@ file="data/processed/1300_USA-road-d.BAY.gr"
 
 # method="static"
 # method="heuristic"
-method="branch_and_cut"
+# method="branch_and_cut"
 # method="dualized"
+method="plans_coupants"
 time_limit=600
 
 verbose=2

@@ -29,7 +29,7 @@ struct SolveMethod {
     double callBacksTimeSpan = 0.0;
 
     void add_static_constraints(IloEnv& env, IloModel& model, IloBoolVarArray& x, IloBoolVarArray& y, IloNumVar z, const Instance& inst) const;
-    void retrieveCplexSolution(const IloCplex& cplex, const IloNumArray& xValues, Instance& inst);
+    void retrieveCplexSolution(const IloNumArray& xValues, Instance& inst);
     void parametrizeCplex(IloCplex& cplex, const unsigned int& time_limit, const int& verbose) const;
     void cplexCheckStatus(const IloCplex& cplex, const Instance& inst) const;
 

@@ -60,7 +60,7 @@ ILOLAZYCONSTRAINTCALLBACK7(myCallBack, const IloBoolVarArray&, x, const IloBoolV
                     break;
                 }
             }
-            if (current_node == sol[inst.sol.size()-1]-1) {
+            if (current_node == sol[sol.size()-1]-1) {
                 throw std::domain_error("Using arc that does not exist for instance " + inst.name);
             }
         }
@@ -125,7 +125,7 @@ void BranchAndCutMethod::solve(IloEnv& env, Instance& inst, const unsigned int& 
     // Retrieve solution
     IloNumArray xValues(env);
     cplex.getValues(xValues, x);
-    retrieveCplexSolution(cplex, xValues, inst);
+    retrieveCplexSolution(xValues, inst);
     xValues.end();
 
     nodesExplored = cplex.getNnodes();

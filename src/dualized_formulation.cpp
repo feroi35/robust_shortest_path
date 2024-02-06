@@ -21,9 +21,8 @@ void DualizedMethod::solve(IloEnv& env, Instance& inst, const unsigned int& time
     // Constraints
     add_static_constraints(env, model, x, y, z, inst);
     model.add(z >= inst.d1*eta + IloScalProd(x, inst.d_vec) + IloScalProd(lambda, inst.D_vec));
-
     for (unsigned int a = 0; a < inst.n_arc; ++a) {
-    model.add(eta + lambda[a] >= inst.d_vec[a]*x[a]);
+        model.add(eta + lambda[a] >= inst.d_vec[a]*x[a]);
     }
     model.add(inst.d2*alpha + 2*IloSum(beta) + IloScalProd(y, inst.p) <= inst.S);
     for (unsigned int i=0; i<inst.n; i++) {
@@ -53,7 +52,7 @@ void DualizedMethod::solve(IloEnv& env, Instance& inst, const unsigned int& time
     // Retrieve solution
     IloNumArray xValues(env);
     cplex.getValues(xValues, x);
-    retrieveCplexSolution(cplex, xValues, inst);
+    retrieveCplexSolution(xValues, inst);
     xValues.end();
 
     nodesExplored = cplex.getNnodes();
