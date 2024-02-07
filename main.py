@@ -33,6 +33,18 @@ def merge_dataframe():
     
     df_merge.to_csv('results/dualized_results_merged.csv', index=False)
 
+
+def identify_unsolved_instances():
+    """
+    find the instances where an error happened and ,,,,, was returned
+    """
+    df = pd.read_csv('results/branch_and_cut_results.csv')
+    count = 0
+    for index, row in df.iterrows():
+        if math.isnan(row['objective']):
+            print(row['instance'])
+            count += 1
+    print(count)
     
 
 def main():
@@ -93,4 +105,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    identify_unsolved_instances()

@@ -1,8 +1,8 @@
-method="plans_coupants"
-time_limit=300
+method="branch_and_cut"
+time_limit=500
 verbose=0
 
-GLOBAL_CSV="results/${method}_results_bis.csv"
+GLOBAL_CSV="results/${method}_results.csv"
 repo_instances="data/processed"
 
 # Supprimer le fichier CSV global s'il existe déjà
@@ -15,7 +15,7 @@ make release
 
 count=1
 for file in "$repo_instances"/*.gr
-do
+do 
     echo "Running file: $file, $count/123"
     ./myprogram "$file" "$method" "$time_limit" "$verbose" >> "$GLOBAL_CSV"
     ((count++))
