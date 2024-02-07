@@ -613,7 +613,15 @@ Donc nous ne le faisons pas volontairement
 
 
 Plans_coupants
-Ajouts du symmetry break
 
 Problème
 Domain error caught: Using arc that does not exist for instance data/processed/100_USA-road-d.NY.gr
+if current_node == sol[inst.sol - 1] instead of sol[sol.size - 1]...
+Les dangers du copier collé. 
+
+Autre problème. Quand on ne trouvait pas de solution admissible lors du run. 
+La meilleure solution restait initialisée à 0 et donc n'était pas un chemin admissible. 
+Pour rectifier cela, on garde en mémoire la meilleure solution admissible ou la meilleure solution non admissible
+mais qui viole moins les contraintes. 
+A moins que CPLEX ne trouve pas un chemin de s à t, (ce qui n'arrive pas en pratique), cela ne doit plus crasher. 
+Et si jamais c'est le cas et que CPLEX ne trouve pas de chemin, ça ne me parait pas déconnant que cela renvoit une erreur. 

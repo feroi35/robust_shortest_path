@@ -151,6 +151,17 @@ void SolveMethod::retrieveCplexSolution(const IloNumArray& xValues, Instance& in
         std::cerr << "Warning: solution vector not empty for instance " << inst.name << std::endl;
         inst.sol.clear();
     }
+    bool empty_solution = true;
+    for (unsigned int a=0; a<inst.n_arc; a++) {
+        if (xValues[a] > 0.5) {
+            empty_solution = false;
+            break;
+        }
+    }
+    if (empty_solution) {
+        throw std::domain_error("Empty solution for instance " + inst.name
+            + ". Branch and cut or plans coupants, not even one static path was found.");
+    }
     unsigned int current_node = inst.s-1;
     while (current_node != inst.t-1) {
         inst.sol.push_back(current_node+1);
