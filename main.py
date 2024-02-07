@@ -33,12 +33,6 @@ def merge_dataframe():
             df_merge = pd.concat([df_merge, row_retested], ignore_index=True)
         else:
             df_merge = pd.concat([df_merge, row.to_frame().T], ignore_index=True)
-<<<<<<< HEAD
-
-    df_merge.to_csv('results/dualized_results_merged.csv', index=False)
-
-=======
-    
     df_merge.to_csv('results/branch_and_cut_results_merged.csv', index=False)
 
 
@@ -53,33 +47,46 @@ def identify_unsolved_instances():
             print(row['instance'])
             count += 1
     print(count)
-    
->>>>>>> b7a99ccb033250638d740f11cff0b32830b72be4
+
 
 def make_graphic(big_df):
+    n_instances = big_df['instance'].nunique()
     sns.set()
     fig = plt.figure(figsize=(10, 5))
     time = np.arange(1, 1200, 1)
     for method in big_df['method'].unique():
         print(method)
-        nb_closed_instances = []
-        # compter le nombre d'instances closed en moins que le temps
+        fraction_closed_instances = []
         for t in time:
-            nb_closed_instances.append(big_df[(big_df['method'] == method) & (big_df['time'] < t) & (big_df['closed'] == True)].shape[0])
-        plt.plot(time, nb_closed_instances, label=method)
+            nb_closed_instances = big_df[(big_df['method'] == method) & (big_df['time'] < t) & (big_df['closed'] == True)].shape[0]
+            fraction_closed_instances.append(nb_closed_instances/n_instances)
+        plt.plot(time, fraction_closed_instances, label=method)
     plt.xlabel("Time (s)")
-    plt.ylabel("Number of closed instances")
+    plt.ylabel("Fraction of closed instances")
     plt.legend()
-    plt.savefig("aaaa.png")
-    return
+    plt.savefig("graphics/closed_instances_by_method.png")
+
+
+def make_graphic2(big_df):
+    n_instances = big_df['instance'].nunique()
+    sns.set()
+    fig = plt.figure(figsize=(10, 5))
+    gaps = np.arange(0, 101, 1)
+    for method in big_df['method'].unique():
+        print(method)
+        fraction_instances_with_gap_less_than = []
+        for gap in gaps:
+            nb_instances_with_gap_less_than_gap = big_df[(big_df['method'] == method) & (big_df['gap'] <= gap + 1e-5)].shape[0]
+            fraction_instances_with_gap_less_than.append(nb_instances_with_gap_less_than_gap/n_instances)
+        plt.plot(gaps, fraction_instances_with_gap_less_than, label=method)
+    plt.xlabel("Gap (%)")
+    plt.ylabel("Fraction of instances with gap less than")
+    plt.legend()
+    plt.savefig("graphics/instances_with_gap_less_than_by_method.png")
 
 
 def make_results_tab():
-    # methods = ["plans_coupants", "branch_and_cut", "dualized", "heuristic", "static"]
-    methods = ["plans_coupants", "dualized", "heuristic", "static"]
-
-    # df = pd.read_csv("test.csv")
-    # methods = ["a", "b", "static"]
+    methods = ["plans_coupants", "branch_and_cut", "dualized", "heuristic", "static"]
 
     df_initialized = False
     for method in methods:
@@ -100,10 +107,8 @@ def make_results_tab():
     # A cause des erreurs d'arrondi, mais toujours positif normalement (TOL=1e-3 peut être un peu trop grand)
     df["closed"] = df["gap"] < 1e-3
 
-    print(df.head())
-
-    # make_graphic(df)
-    # return
+    make_graphic(df)
+    make_graphic2(df)
 
     ######################
     columns = ["instance"]
@@ -145,7 +150,7 @@ def make_results_tab():
 
     result_df['PR_sup'] = 100*(result_df['bestObjective'] - result_df['lower_bound_static']) / result_df['lower_bound_static']
     result_df['PR_sup'] = result_df['PR_sup'].apply(lambda x: min(100, x))
-    
+
     # Define a custom sorting function to sort instances by their numerical value
     def sort_by_instance(instance):
         try:
@@ -166,19 +171,14 @@ def make_results_tab():
     result_df = result_df[final_colums].reset_index(drop=True)
 
     # Round the dataframe
-    columns_to_round = ['PR_inf', 'PR_sup', 'objective_dualized', 'gap_dualized', 
-                    'objective_heuristic', 'gap_heuristic', 'objective_plans_coupants', 
+    columns_to_round = ['PR_inf', 'PR_sup', 'objective_dualized', 'gap_dualized',
+                    'objective_heuristic', 'gap_heuristic', 'objective_plans_coupants',
                     'gap_plans_coupants']
     result_df[columns_to_round] = result_df[columns_to_round].round(2).abs()
     # le abs sert juste à enlever les -0.0
 
-    result_df.to_csv('results_.csv', index=False)
-
-
-def main():
-    return
+    result_df.to_csv('final_results.csv', index=False)
 
 
 if __name__ == '__main__':
-    # main()
     make_results_tab()

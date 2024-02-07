@@ -2,8 +2,8 @@ method="branch_and_cut"
 time_limit=500
 verbose=0
 
-GLOBAL_CSV="results/${method}_results_ter.csv"
-repo_instances="data/retest_branch_and_cut"
+GLOBAL_CSV="results/${method}_results_.csv"
+repo_instances="data/processed"
 
 # Supprimer le fichier CSV global s'il existe déjà
 rm -f $GLOBAL_CSV
