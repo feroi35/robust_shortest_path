@@ -20,20 +20,20 @@ struct HeuristicMethod : public SolveMethod {
     double precision_K;
     int max_iter;
     float max_duration;
-    std::vector<float> inf_dist;
-    std::vector<float> inf_dist_nodes;
+    std::vector<float> inf_dist; // borne inf sur la distance entre un sommet u et t
+    std::vector<float> inf_dist_nodes; // borne inf sur le poids entre un sommet u et t
 
-    std::vector<float> backward_dijkstra_distance(const Instance& inst) const;
-    std::vector<float> backward_dijkstra_nodes(const Instance& inst) const;
-    std::vector<IloInt> retrieve_feasible_sol(const Instance& inst) const;
-    std::vector<IloInt> retrieve_feasible_sol_2(const Instance& inst, IloEnv& env, const int& verbose);
-    std::vector<IloInt> astar_solve(const Instance& inst, const double& K, const int& verbose=0) const;
-    void complete_astar_solve(Instance& inst, IloEnv& env, const double& precision_K, const int& max_iter, const float& max_duration, const int& verbose=0);
+    std::vector<float> backward_dijkstra_distance(const Instance& inst) const; // calcul de la distance minimal entre chaque sommet et t
+    std::vector<float> backward_dijkstra_nodes(const Instance& inst) const; // calcul du poids minimal entre chaque sommet et t
+    std::vector<IloInt> retrieve_feasible_sol(const Instance& inst) const; // cherche une solution réalisable avec un plus cours chemin sur les poids
+    std::vector<IloInt> retrieve_feasible_sol_2(const Instance& inst, IloEnv& env, const int& verbose); // cherche une solution réalisable si la méthode précédente a échouée
+    std::vector<IloInt> astar_solve(const Instance& inst, const double& K, const int& verbose=0) const; // résolution du problème avec l'algorithme A* pour une valeur de pondération K
+    void complete_astar_solve(Instance& inst, IloEnv& env, const double& precision_K, const int& max_iter, const float& max_duration, const int& verbose=0); // résolution complète par notre heuristique
 
     void solve(IloEnv& env, Instance& inst, const unsigned int& time_limit, const int& verbose) override;
 };
 
-
+// objet pour stocker les informations sur les noeuds pendant l'exploration du graphe par A*
 struct NodesInfo{
     int index;
     int parent;
@@ -60,11 +60,11 @@ struct NodesInfo{
 
     float compute_tot_dist(const double K) const { return dist + robust_dist + K*(dist_nodes + robust_dist_nodes); };
 
-    void redo_knapsack_dij(const Instance& inst, const int& new_node);
-    void redo_knapsack_phi(const Instance& inst, const int& new_node);
+    void redo_knapsack_dij(const Instance& inst, const int& new_node); // si on ajoute un nouveau noeuds dans le sac à dos
+    void redo_knapsack_phi(const Instance& inst, const int& new_node); // si on ajoute un nouveau noeuds dans le sac à dos
 };
 
-
+// objet pour stocker les informations sur les solutions successives pendant l'heuristique
 struct SolutionInfo{
     std::vector<IloInt> sol;
     double K;

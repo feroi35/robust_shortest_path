@@ -53,14 +53,14 @@ struct Instance {
     IloNumArray ph; // incertitudes poids des villes
     IloNumArray d_vec; // durée de trajet des arcs
     IloNumArray D_vec; // incertitude durée de trajet des arcs
-    std::vector<Arc> mat;
-    std::vector<std::vector<int>> map_mat; // matrice liant les sommet a l'arc correspondant
+    std::vector<Arc> mat; // liste des arcs
+    std::vector<std::vector<int>> map_mat; // matrice fournissant l'indice dans mat de l'arc reliant les sommets i et j
 
     std::vector<std::vector<float>> d; // matrice des durées de trajet
     std::vector<std::vector<float>> D; // matrice des incertitudes des durées de trajet
     std::vector<std::vector<int>> neighbors_list; // liste des noeuds voisins sortants
     std::vector<std::vector<int>> reverse_neighbors_list; // liste des noeuds voisins entrants
-    std::vector<std::vector<bool>> pair_nodes; // pour stocker les sous-chemins déjà explorés
+    std::vector<std::vector<bool>> pair_nodes; // pour stocker les sous-chemins déjà explorés lors de la réduction de symétries
 
     std::vector<IloInt> sol; // liste des villes visitées dans l'ordre
 
@@ -86,6 +86,7 @@ struct Instance {
     double compute_robust_constraint_knapsack(const std::vector<IloInt>& solution, const unsigned int& verbose=0) const;
 };
 
+// Functions to reduce symmetry
 std::vector<std::vector<int>> arcs_to_forbid(const Instance& inst, const int& i, const int& j);
 std::vector<std::vector<int>> arcs_to_forbid(const Instance& inst);
 
