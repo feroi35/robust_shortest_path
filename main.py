@@ -10,8 +10,8 @@ def merge_dataframe():
     select two dataframe of simulations, and merge them into a single dataframe, chosing the best objective and lower bound
     for each instance
     """
-    df = pd.read_csv('results/dualized_results.csv')
-    df2 = pd.read_csv('results/dualized_results_bis.csv')
+    df = pd.read_csv('results/branch_and_cut_results.csv')
+    df2 = pd.read_csv('results/branch_and_cut_results_bis.csv')
 
     df_merge = pd.DataFrame(columns = df.columns)
 
@@ -27,12 +27,34 @@ def merge_dataframe():
             elif row_retested['objective'].values[0] - row_retested['lower_bound'].values[0] == row['objective'] - row['lower_bound'] and row_retested['time'].values[0] < row['time']:
                 df_merge = pd.concat([df_merge, row_retested], ignore_index=True)
             else:
-                df_merge = pd.concat([df_merge, row.to_frame().T], ignore_index=True)
+                length = 22
+            row_retested = df2[df2['instance'].str.contains(row['instance'][-length:])]
+            row_retested.at[row_retested.index[0], 'instance'] = row['instance']
+            df_merge = pd.concat([df_merge, row_retested], ignore_index=True)
         else:
             df_merge = pd.concat([df_merge, row.to_frame().T], ignore_index=True)
+<<<<<<< HEAD
 
     df_merge.to_csv('results/dualized_results_merged.csv', index=False)
 
+=======
+    
+    df_merge.to_csv('results/branch_and_cut_results_merged.csv', index=False)
+
+
+def identify_unsolved_instances():
+    """
+    find the instances where an error happened and ,,,,, was returned
+    """
+    df = pd.read_csv('results/branch_and_cut_results.csv')
+    count = 0
+    for index, row in df.iterrows():
+        if math.isnan(row['objective']):
+            print(row['instance'])
+            count += 1
+    print(count)
+    
+>>>>>>> b7a99ccb033250638d740f11cff0b32830b72be4
 
 def make_graphic(big_df):
     sns.set()
