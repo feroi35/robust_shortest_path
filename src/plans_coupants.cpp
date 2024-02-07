@@ -82,8 +82,8 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
         if (verbose > 1) std::cout << "\nSolving..." << std::endl;
         cplex.solve();
         if (verbose > 1) std::cout << "Solved!" << std::endl;
+        nodesExplored += cplex.getNnodes();
         cplexCheckStatus(cplex, inst);
-
 
         cplex.getValues(xValues, x); // cplex.getValues does not work for IloBoolArray...
         cplex.getValues(yValues, y);
@@ -179,7 +179,6 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
         }
         optimality = !violated_objective && !violated_constraint;
         nCallBacks++;
-        nodesExplored += cplex.getNnodes();
         spentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count()) / 1e6;
     }
 
