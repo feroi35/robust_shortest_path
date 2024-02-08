@@ -80,11 +80,17 @@ void PlansCoupantsMethod::solve(IloEnv& env, Instance& inst, const unsigned int&
         }
 
         if (verbose > 1) std::cout << "\nSolving..." << std::endl;
+        cplex.setParam(IloCplex::Param::TimeLimit, (int) std::max(120., (double) time_limit-spentTime));
         cplex.solve();
         if (verbose > 1) std::cout << "Solved!" << std::endl;
         nodesExplored += cplex.getNnodes();
-        cplexCheckStatus(cplex, inst);
+        // cplexCheckStatus(cplex, inst);
 
+        if (cplex.getStatus() == IloAlgorithm::Unknown) {
+            break; 
+        }
+
+        
         cplex.getValues(xValues, x); // cplex.getValues does not work for IloBoolArray...
         cplex.getValues(yValues, y);
         double current_best_value = cplex.getObjValue();

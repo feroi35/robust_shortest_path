@@ -1,6 +1,6 @@
 
 # file="data/processed/20_USA-road-d.COL.gr"
-file="data/processed/1000_USA-road-d.COL.gr"
+file="data/processed/2300_USA-road-d.COL.gr"
 # file="data/processed/1200_USA-road-d.BAY.gr"
 # file="data/processed/1300_USA-road-d.BAY.gr"
 
@@ -8,10 +8,10 @@ file="data/processed/1000_USA-road-d.COL.gr"
 # method="heuristic"
 # method="branch_and_cut"
 # method="dualized"
-method="branch_and_cut"
-time_limit=10
+method="plans_coupants"
+time_limit=50
 
-verbose=0
+verbose=2
 
 make release
 
