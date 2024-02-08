@@ -36,7 +36,7 @@ struct BestSolFound {
 };
 
 
-ILOLAZYCONSTRAINTCALLBACK7(myCallBack, const VarCallBack&, varCallback, Instance&, inst, 
+ILOLAZYCONSTRAINTCALLBACK7(myCallBack, const VarCallBack&, varCallback, Instance&, inst,
         BestSolFound&, bestSolFound, const unsigned int&, verbose, int&, nIteration, double&, spentTime,
         const IloCplex&, cplex) {
     nIteration++;
@@ -46,7 +46,7 @@ ILOLAZYCONSTRAINTCALLBACK7(myCallBack, const VarCallBack&, varCallback, Instance
     IloEnv env = getEnv();
     IloNumArray xValues(env);
     IloNumArray yValues(env);
-    
+
     getValues(xValues, varCallback.x);
     getValues(yValues, varCallback.y);
     double zValue = getValue(varCallback.z);
@@ -110,12 +110,6 @@ ILOLAZYCONSTRAINTCALLBACK7(myCallBack, const VarCallBack&, varCallback, Instance
         }
     }
 
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    double spentTime_ = static_cast<double>(duration.count()) / 1e6;
-    if (verbose > 0) std::cout << "Time: " << spentTime_ << "s" << std::endl;
-    spentTime += spentTime_;
-
     // Update best solution found
     double current_bound = cplex.getBestObjValue();
     if (bestSolFound.best_bound < current_bound) {
@@ -140,6 +134,12 @@ ILOLAZYCONSTRAINTCALLBACK7(myCallBack, const VarCallBack&, varCallback, Instance
         }
     }
 
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    double spentTime_ = static_cast<double>(duration.count()) / 1e6;
+    if (verbose > 0) std::cout << "Time: " << spentTime_ << "s" << std::endl;
+    spentTime += spentTime_;
+
     xValues.end();
     yValues.end();
 }
@@ -163,7 +163,7 @@ void BranchAndCutMethod::solve(IloEnv& env, Instance& inst, const unsigned int& 
     BestSolFound bestSolFound(best_xValues, best_yValues, best_score, less_violated_constraint,
         best_violated_score, best_bound, admissible_solution_found);
     //
-    
+
     IloModel model(env);
 
     // Variables

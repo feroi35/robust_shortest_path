@@ -182,7 +182,7 @@ std::vector<IloInt> HeuristicMethod::retrieve_feasible_sol_2(const Instance& ins
     while (current_node != inst.t-1) {
         sol.push_back(current_node+1);
         for (unsigned int a=0; a<inst.n_arc; a++) {
-            if (inst.mat[a].tail == current_node+1 && xValues[a] >= 1 - TOL) {
+            if (inst.mat[a].tail == current_node+1 && xValues[a] >= 0.5) {
                 current_node = inst.mat[a].head-1;
                 break;
             }

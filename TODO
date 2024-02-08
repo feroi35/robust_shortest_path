@@ -3,21 +3,7 @@
 
 ## TODO
 
-- Faire les outils graphiques. Nombre d'instances résolues par rapport au temps de résolution
-- creuser pourquoi CPLEX trouve autant de symmétries dans la résolution dualized
-
-- si la solution n'est pas valide (contrainte robuste), faire renvoyer 1,000,000 en score ? Ajouter une colonne "admissibilité"?
-
-- Dans la résolution par dualisation, si l'on ne tourne pas assez longtemps et que l'on n'arrive pas à l'optimal, la solutoin que renvoie l'algorithme n'est pas forcément la même que le vrai score robuste. On garde la solution courante mais on recalcule le vrai score et on fait attention à ce que la solution soit bien admissible.
-
-- Factoriser le code: classe mère Method
-avec une fonction virtuelle = 0 qui résout le problème qui sera définit dans les classes filles
-Permet de standardiser le renvoi.
-
-- warm start à l'aide de l'heuristique? Dans dualized et plans coupants, solution réalisable qui permet de couper des branches plus vite et accélerer la résolution
-
-- Plans coupants: les solutions trouvées s'additionnent. Warm start avec autant de solutions initiales que d'itération. 
-Serait mieux de garder  uniquement la dernière?
+- creuser pourquoi CPLEX trouve autant de symétries dans la résolution dualized
 
 
 ## 04.01
