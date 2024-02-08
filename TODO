@@ -1,31 +1,10 @@
 # TODO et Carnet de bord
 
-
 ## TODO
 
 - creuser pourquoi CPLEX trouve autant de symétries dans la résolution dualized
 
 
-## 04.01
-
-Certaines instances crashent lors de la résolution statique:
-
-Quelques examples:
-
-Running file: data/processed/1200_USA-road-d.COL.gr
-Concert exception caught: CPLEX Error  1217: No solution exists.
-
-Running file: data/processed/1500_USA-road-d.BAY.gr
-Concert exception caught: CPLEX Error  1217: No solution exists.
-
-Running file: data/processed/1500_USA-road-d.NY.gr
-Concert exception caught: CPLEX Error  1217: No solution exists.
-
-## 06.01
-
-Pas de crash. Pas de solution existe car CPLEX n'avait pas eu le temps d'en trouver une.
-Si on laisse tourner + de 10s, ça va.
-Fixer une limite max de temps, 1 minute ?
 
 ## 17.01
 
@@ -35,11 +14,7 @@ Pas de message d'erreur, simplement :
 
 Mais si on creuse en affichant **dmesg**, on obtient:
 Out of memory: Killed process 2576 (myprogram) total-vm:3771096kB, anon-rss:3110692kB, file-rss:4kB, shmem-rss:0kB, UID:1000 pgtables:6396kB oom_score_adj:0
-Problème: c'est lorsqu'on utilise cplex que le programme meurt. Il arrive bien à se build avant...
-
-https://www.ibm.com/support/pages/diagnosing-cplex-error-1001-out-memory
-For some reason, cplex ne ressort pas l'erreur 1001, linux le tue avant
-Contacter cplex ?
+Problème: c'est lorsqu on utilise cplex que le programme meurt. Il arrive bien à se build avant...
 
 ulimit -a
 max locked memory           (kbytes, -l) 65536
@@ -54,25 +29,22 @@ Donc lié à un problème de mémoire sur le WSL
 Remarque: on obtient les warnings suivants:
 Warning, line 1755417: Name 'x_0_0#235978' does not exist.
 
-J'imagine que ce warning apparait pour toutes les variables qui sont "créées" mais jamais utilisées dans les contraintes ou l'objectif
-c'est à dire, les variables qui représentent des arcs qui n'existent pas.
+J imagine que ce warning apparait pour toutes les variables qui sont "créées" mais jamais utilisées dans les contraintes ou l'objectif
+c'est à dire, les variables qui représentent des arcs qui n existent pas.
 
 Dans mon fichier .wslconfig,
 j'avais memory = 4Gb
-Quand j'enlève cette ligne, Cplex arrive à presolve le problème, ce qu'il ne faisait pas avant. Mais crash après trouver sa première solution
+Quand j enlève cette ligne, Cplex arrive à presolve le problème, ce qu'il ne faisait pas avant. Mais crash après trouver sa première solution
 
 Out of memory: Killed process 1443 (myprogram) total-vm:3981856kB, anon-rss:3086536kB, file-rss:4kB, shmem-rss:0kB, UID:1000 pgtables:7136kB oom_score_adj:0
 
 Essayons d'abord de modifier le problème pour que moins de mémoire soit prise.
 Pas besoin de stocker un vecteur de vecteurs entier remplis à moitié de NaN, il faut faire ça de manière intelligente.
 
-- 1. Stocker un vecteur de vecteurs de vecteurs d'arc entrants et un vecteur de vecteurs d'arcs sortants. On stocke ainsi uniquement ce dont on a besoin.
-- 2. (à tester) Virer env de la création de l'instance. C'est absurde comme manière de faire. De +, ça peut poser des problèmes lors de la résolution de sous-problèmes lors de l'algo des plans coupants.
-
 ## 19.01
 
 Résolution des sous-problèmes, c'est tellement overkill de résoudre le MILP
-Si l'on trie au début les D et les poids des villes, il suffit de donner le plus gros coefficient aux premières villes/ aux premiers arcs.
+Si on trie au début les D et les poids des villes, il suffit de donner le plus gros coefficient aux premières villes/ aux premiers arcs.
 
  data/processed/100_USA-road-d.COL.gr
  La contrainte robuste est plus faible que la contrainte statique (poids des villes additionné), pas possible.
@@ -81,7 +53,6 @@ Faire attention aux décalages de 1. Indexation des instances commence à 1. Pro
 
 
 En faisant tourner le modèle statique sur toutes les instances:
-
 Running file: data/processed/2100_USA-road-d.COL.gr, 56 / 123
 Advanced basis not built.
 Advanced basis not built.
@@ -93,31 +64,19 @@ Concert exception caught: CPLEX Error  1217: No solution exists.
 
 ## 21.01
 
-Dans la version dualized avec les arcs,
-lambda était un BoolVarArray au lieu d'être un NumVarArray
--> corrigé
 
 Problème de dualized.
 Detecting symmetries...
 Elapsed time for symmetry detection = 82.89 sec. (10000.42 ticks)
 Found 2.310657e+347 symmetric permutations.
 
-Comment est-ce qu'il peut détecter autant de symmétries ?
+Comment est-ce qu il peut détecter autant de symmétries ?
 A creuser pour améliorer la résolution
 
 Running file: data/processed/1000_USA-road-d.COL.gr, 2/123
 Advanced basis not built.
 
 Que signifie "Advanced basis not built" ?
-
-
-## 23.01 r
-error run_all dualized:
-1800_COL, 2200_COL, 2200_NY, 2500_COL: mismatch robust_cost cplex_cost ;
-2100_NY: using missing arc;
-2300_COL: advance basis not built + robust cost and cplex_cost mismatch;
-2400_COL: no solution found;
-
 
 
 ## 24.01
@@ -272,7 +231,7 @@ On peut laisser comme ça sans grapiller des secondes qui seront inutiles.
 
 Branch and cut ok, à lancer sur toutes les instances pour voir les résultats
 
-Go plans sécants maintenant, il n'y a pas une différence énorme par rapport à ce qu'on vient de faire.
+Go plans sécants maintenant, il n y a pas une différence énorme par rapport à ce qu'on vient de faire.
 
 - Résolution des sous-problèmes, c'est tellement overkill de résoudre le MILP (RESOLU)
 Si l'on trie au début les D et les poids des villes, il suffit de donner le plus gros coefficient aux premières villes/ aux premiers arcs.
@@ -426,7 +385,7 @@ Pas admissible
 
 Lazy constraint callback, it 43
 1099 1110 881 1185 1250 1212 804 646 389 63 139 62 263 416 1027 1067 505 536 1186 1227 818 656 1086 1229 820 1177
-Robust score: 102694 // D'où sort cette merde?
+Robust score: 102694 // D'où sort ce truc?
 Robust score inst 98706.5 // C'est le bon score
 Robust score does not match
 Error in lazy constraint callback computing robust score: Robust score does not match
@@ -458,7 +417,7 @@ Robust score does not match
 Error in lazy constraint callback computing robust score: Robust score does not match
 
 C'est le score statique qui ne correspond pas à l'itération 43. 
-C'est possible que l'instance ait été modifiée quelque part?
+C'est possible que l'instance ait été modifiée quelque part? NON
 
 
 Lazy constraint callback, it 43
