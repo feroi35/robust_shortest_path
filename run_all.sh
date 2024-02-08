@@ -28,4 +28,4 @@ do
     # fi
 done
 
-# make clean
+make clean

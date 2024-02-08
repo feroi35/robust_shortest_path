@@ -17,11 +17,13 @@ Pour tester les résolutions, on utilisera les instances de la 9e édition de DI
 
 http://www.diag.uniroma1.it/~challenge9/
 
-Pour exécuter notre code, ouvrez le fichier run.sh, sélectionez l'instance sur laquelle exécuter le code (tout les fichiers sont dans le dossier data/processed), sélectionnez une des méthode disponible, choisissez la time limit (en secondes) pour les solveurs ainsi que le niveau de verbose (entre 0 et 2). Enfin, lancez l'exécution du fichier run.sh depuis l'invite de commande.
+Pour exécuter notre code, ouvrez le fichier run.sh, sélectionez l'instance sur laquelle exécuter le code (tous les fichiers sont dans le dossier data/processed), sélectionnez une des méthodes disponibles, choisissez la time limit (en secondes) pour les solveurs ainsi que le niveau de verbose (entre 0 et 2). Enfin, lancez l'exécution du fichier run.sh depuis l'invite de commande sous Linux, si vous utiliser g++ et que vous avez une license CPLEX.
+
+Pour reproduire les résultats sur toutes les instances, vous pouvez lancez le fichier run_all.sh en indiquant le nom de la méthode ainsi que la time limit.
 
 ## Structure du projet
 
-Le projet est réalisé en C++, seule une petite partie de post-traitement est réalisée en python.
+Le projet est réalisé en C++, seule une petite partie de post-traitement est réalisée en Python.
 
 Pour parser les instances, nous avons créé une classe _Instance_, décrite dans le parser.h. Cet objet contient toutes les informations requises concernant l'instance pour l'éxécution des différents algorithmes par la suite. On peut également stocker dans l'objet une solution. La classe dispose également de méthodes permettant de calculer les scores et contraintes statiques et robustes correspondant à la solution stockée dans l'objet.
 

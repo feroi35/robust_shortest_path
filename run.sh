@@ -1,17 +1,8 @@
 
 
-# file="data/processed/20_USA-road-d.COL.gr"
-file="data/processed/2300_USA-road-d.COL.gr"
-# file="data/processed/1200_USA-road-d.BAY.gr"
-# file="data/processed/1300_USA-road-d.BAY.gr"
-
-# method="static"
-# method="heuristic"
-# method="branch_and_cut"
-# method="dualized"
+file="data/processed/20_USA-road-d.COL.gr"
 method="plans_coupants"
 time_limit=50
-
 verbose=2
 
 make release
