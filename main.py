@@ -79,7 +79,7 @@ def make_graphic2(big_df):
             nb_instances_with_gap_less_than_gap = big_df[(big_df['method'] == method) & (big_df['gap'] <= gap + 1e-5)].shape[0]
             fraction_instances_with_gap_less_than.append(nb_instances_with_gap_less_than_gap/n_instances)
         plt.plot(gaps, fraction_instances_with_gap_less_than, label=method)
-    plt.xlabel("Gap to best known solution (%)")
+    plt.xlabel("Gap to best known lower bound (%)")
     plt.ylabel("Fraction of instances")
     plt.legend(loc='lower right')
     plt.savefig("graphics/instances_with_gap_less_than_by_method.png")
@@ -203,5 +203,4 @@ def make_tab_best_solution():
 
 
 if __name__ == '__main__':
-    # make_results_tab()
-    make_tab_best_solution()
+    make_results_tab()
