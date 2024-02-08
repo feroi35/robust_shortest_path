@@ -214,4 +214,3 @@ myprogram_debug
 
 # Modèles cplex
 *.lp
-data/*

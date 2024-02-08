@@ -52,8 +52,8 @@ def identify_unsolved_instances():
 def make_graphic(big_df):
     n_instances = big_df['instance'].nunique()
     sns.set()
-    fig = plt.figure(figsize=(10, 5))
-    time = np.arange(1, 1200, 1)
+    fig = plt.figure()
+    time = np.arange(1, 600, 1)
     for method in big_df['method'].unique():
         print(method)
         fraction_closed_instances = []
@@ -63,14 +63,14 @@ def make_graphic(big_df):
         plt.plot(time, fraction_closed_instances, label=method)
     plt.xlabel("Time (s)")
     plt.ylabel("Fraction of closed instances")
-    plt.legend()
+    plt.legend(loc='lower right')
     plt.savefig("graphics/closed_instances_by_method.png")
 
 
 def make_graphic2(big_df):
     n_instances = big_df['instance'].nunique()
     sns.set()
-    fig = plt.figure(figsize=(10, 5))
+    plt.figure()
     gaps = np.arange(0, 101, 1)
     for method in big_df['method'].unique():
         print(method)
@@ -79,9 +79,9 @@ def make_graphic2(big_df):
             nb_instances_with_gap_less_than_gap = big_df[(big_df['method'] == method) & (big_df['gap'] <= gap + 1e-5)].shape[0]
             fraction_instances_with_gap_less_than.append(nb_instances_with_gap_less_than_gap/n_instances)
         plt.plot(gaps, fraction_instances_with_gap_less_than, label=method)
-    plt.xlabel("Gap (%)")
-    plt.ylabel("Fraction of instances with gap less than")
-    plt.legend()
+    plt.xlabel("Gap to best known solution (%)")
+    plt.ylabel("Fraction of instances")
+    plt.legend(loc='lower right')
     plt.savefig("graphics/instances_with_gap_less_than_by_method.png")
 
 
@@ -101,7 +101,7 @@ def make_results_tab():
     # On recupére la meilleure borne inf obtenue pour chaque instance à l'aide des différentes méthodes (souvent dualized)
     df['bestlower_bound'] = df.groupby('instance')['lower_bound'].transform('max')
 
-    df['gap'] = 100*(df['objective'] - df['bestlower_bound']) / df['bestlower_bound']
+    df['gap'] = 100*(df['objective'] - df['bestlower_bound']) / df['objective']
     df['gap'] = df['gap'].apply(lambda x: min(100, x))
     df['gap'] = df['gap'].apply(lambda x: max(0, x))
     # A cause des erreurs d'arrondi, mais toujours positif normalement (TOL=1e-3 peut être un peu trop grand)
@@ -145,10 +145,10 @@ def make_results_tab():
             result_df = pd.concat([result_df, instance_df], ignore_index=True)
 
     # Calcul du poids de la robustesse (inf et sup) différents si l'instance n'a pas été closed
-    result_df['PR_inf'] = 100*(result_df['bestlower_bound'] - result_df['lower_bound_static']) / result_df['lower_bound_static']
+    result_df['PR_inf'] = 100*(result_df['bestlower_bound'] - result_df['lower_bound_static']) / result_df['bestlower_bound']
     result_df['PR_inf'] = result_df['PR_inf'].apply(lambda x: min(100, x))
 
-    result_df['PR_sup'] = 100*(result_df['bestObjective'] - result_df['lower_bound_static']) / result_df['lower_bound_static']
+    result_df['PR_sup'] = 100*(result_df['bestObjective'] - result_df['lower_bound_static']) / result_df['bestObjective']
     result_df['PR_sup'] = result_df['PR_sup'].apply(lambda x: min(100, x))
 
     # Define a custom sorting function to sort instances by their numerical value
@@ -173,12 +173,35 @@ def make_results_tab():
     # Round the dataframe
     columns_to_round = ['PR_inf', 'PR_sup', 'objective_dualized', 'gap_dualized',
                     'objective_heuristic', 'gap_heuristic', 'objective_plans_coupants',
-                    'gap_plans_coupants']
+                    'gap_plans_coupants', 'objective_branch_and_cut', 'gap_branch_and_cut']
     result_df[columns_to_round] = result_df[columns_to_round].round(2).abs()
     # le abs sert juste à enlever les -0.0
 
-    result_df.to_csv('final_results.csv', index=False)
+    result_df.to_csv('results/final_results.csv', index=False)
+
+
+def make_tab_best_solution():
+    # Presque toujours la dualisation, donc je garde uniquement les colonnes qui m'intéressent et je ressors le csv
+    # Les quelques instances où heuristic est meilleure, on les copie-colle manuellement
+    # 2 instances où heuristique est meilleure: 2400 COL et 2500 COL
+    df = pd.read_csv('results/dualized_results.csv')
+    # Define a custom sorting function to sort instances by their numerical value
+    def sort_by_instance(instance):
+        try:
+            return int(instance.split('_')[0].split('/')[-1])
+        except ValueError:
+            return float('inf')
+
+    # Réorganisation des lignes
+    df['instance_numeric'] = df['instance'].apply(sort_by_instance)
+    df.sort_values(by='instance_numeric', inplace=True)
+
+    # Sélection des colonnes qu'on veut garder
+    columns = ["instance", "method", "objective", "lower_bound", "path"]
+    df = df[columns]
+    df.to_csv('results/best_solutions.csv', index=False)
 
 
 if __name__ == '__main__':
-    make_results_tab()
+    # make_results_tab()
+    make_tab_best_solution()
